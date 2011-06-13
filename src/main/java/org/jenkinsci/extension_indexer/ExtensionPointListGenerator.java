@@ -2,16 +2,12 @@ package org.jenkinsci.extension_indexer;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
-import org.apache.maven.artifact.resolver.AbstractArtifactResolutionException;
-import org.codehaus.plexus.PlexusContainerException;
-import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 import org.jvnet.hudson.update_center.ConfluencePluginList;
 import org.jvnet.hudson.update_center.HudsonWar;
 import org.jvnet.hudson.update_center.MavenArtifact;
 import org.jvnet.hudson.update_center.MavenRepositoryImpl;
 import org.jvnet.hudson.update_center.Plugin;
 import org.jvnet.hudson.update_center.PluginHistory;
-import org.sonatype.nexus.index.context.UnsupportedExistingLuceneIndexException;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -27,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -168,7 +163,6 @@ public class ExtensionPointListGenerator {
                     public void run() {
                         try {
                             System.out.println(p.artifactId);
-                            discover(p.latest());
                             synchronized (modules) {
                                 Plugin pi = new Plugin(p,cpl);
                                 modules.put(p.latest(), new Module(p.latest(),pi.getWiki(),pi.getTitle()) {
@@ -178,6 +172,7 @@ public class ExtensionPointListGenerator {
                                     }
                                 });
                             }
+                            discover(p.latest());
                         } catch (Exception e) {
                             System.err.println("Failed to process "+p.artifactId);
                             e.printStackTrace();
