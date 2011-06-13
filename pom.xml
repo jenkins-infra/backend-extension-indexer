@@ -19,12 +19,11 @@
           <archive>
             <manifest>
               <addClasspath>true</addClasspath>
-              <mainClass>org.jvnet.hudson.update_center.Main</mainClass>
+              <mainClass>org.jenkinsci.extension_indexer.ExtensionPointListGenerator</mainClass>
             </manifest>
           </archive>
         </configuration>
       </plugin>
-      <!--
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <executions>
@@ -41,12 +40,16 @@
           </execution>
         </executions>
       </plugin>
-      -->
     </plugins>
   </build>
 
   
   <dependencies>
+    <dependency>
+      <groupId>org.jvnet.hudson</groupId>
+      <artifactId>confluence-api</artifactId>
+      <version>1.0</version>
+    </dependency>
     <dependency>
       <groupId>org.jenkins-ci</groupId>
       <artifactId>update-center2</artifactId>
@@ -56,6 +59,11 @@
       <groupId>org.jvnet.sorcerer</groupId>
       <artifactId>sorcerer-javac</artifactId>
       <version>0.8</version>
+    </dependency>
+    <dependency>
+      <groupId>args4j</groupId>
+      <artifactId>args4j</artifactId>
+      <version>2.0.16</version>
     </dependency>
   </dependencies>
 

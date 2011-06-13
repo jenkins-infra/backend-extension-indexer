@@ -1,17 +1,26 @@
 package org.jenkinsci.extension_indexer;
 
+import hudson.plugins.jira.soap.ConfluenceSoapService;
+import hudson.plugins.jira.soap.RemotePage;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+import org.apache.commons.io.IOUtils;
+import org.jvnet.hudson.confluence.Confluence;
 import org.jvnet.hudson.update_center.ConfluencePluginList;
 import org.jvnet.hudson.update_center.HudsonWar;
 import org.jvnet.hudson.update_center.MavenArtifact;
 import org.jvnet.hudson.update_center.MavenRepositoryImpl;
 import org.jvnet.hudson.update_center.Plugin;
 import org.jvnet.hudson.update_center.PluginHistory;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
 
+import javax.xml.rpc.ServiceException;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.text.MessageFormat;
@@ -22,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -36,6 +46,8 @@ public class ExtensionPointListGenerator {
     private final Map<String,Family> families = new HashMap<String,Family>();
     private final Map<MavenArtifact,Module> modules = new HashMap<MavenArtifact,Module>();
 
+    @Option(name="-wiki",usage="Upload the result to the specified Wiki page")
+    public String wikiPage;
 
     /**
      * Relationship between definition and implementations of the extension points.
@@ -103,7 +115,10 @@ public class ExtensionPointListGenerator {
     }
 
     public static void main(String[] args) throws Exception {
-        new ExtensionPointListGenerator().run();
+        ExtensionPointListGenerator app = new ExtensionPointListGenerator();
+        CmdLineParser p = new CmdLineParser(app);
+        p.parseArgument(args);
+        app.run();
     }
 
     public void run() throws Exception {
@@ -151,7 +166,8 @@ public class ExtensionPointListGenerator {
 
         FileUtils.writeStringToFile(new File("extension-points.json"), container.toString(2));
 
-        generateConfluencePage();
+        File page = generateConfluencePage();
+        uploadToWiki(page);
     }
 
     private void processPlugins(MavenRepositoryImpl r, final ConfluencePluginList cpl) throws Exception {
@@ -188,7 +204,7 @@ public class ExtensionPointListGenerator {
         }
     }
 
-    private void generateConfluencePage() throws FileNotFoundException {
+    private File generateConfluencePage() throws IOException {
         Map<Module,List<Family>> byModule = new LinkedHashMap<Module,List<Family>>();
         for (Family f : families.values()) {
             if (f.definition==null)     continue;   // skip undefined extension points
@@ -199,14 +215,33 @@ public class ExtensionPointListGenerator {
             value.add(f);
         }
 
-        PrintWriter w = new PrintWriter(new File("extension-points.page"));
-        w.println("{toc:maxLevel=2}\n");
+        File page = new File("extension-points.page");
+        PrintWriter w = new PrintWriter(page);
+        IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("preamble.txt")),w);
         for (Entry<Module, List<Family>> e : byModule.entrySet()) {
             w.println("h1.Extension Points in "+e.getKey().getWikiLink());
             for (Family f : e.getValue())
                 f.formatAsConfluencePage(w);
         }
         w.close();
+        return page;
+    }
+
+    private void uploadToWiki(File page) throws IOException, ServiceException {
+        if (wikiPage==null) return;
+        System.out.println("Uploading to " + wikiPage);
+        ConfluenceSoapService service = Confluence.connect(new URL("https://wiki.jenkins-ci.org/"));
+
+        Properties props = new Properties();
+        File credential = new File(new File(System.getProperty("user.home")), ".jenkins-ci.org");
+        if (!credential.exists())
+            throw new IOException("You need to have userName and password in "+credential);
+        props.load(new FileInputStream(credential));
+        String token = service.login(props.getProperty("userName"),props.getProperty("password"));
+
+        RemotePage p = service.getPage(token, "JENKINS", wikiPage);
+        p.setContent(FileUtils.readFileToString(page));
+        service.storePage(token,p);
     }
 
     private void discover(MavenArtifact a) throws IOException, InterruptedException {
