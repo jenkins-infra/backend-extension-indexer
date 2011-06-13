@@ -99,8 +99,9 @@ public class ExtensionPointListGenerator {
         final ConfluencePluginList cpl = new ConfluencePluginList();
 
         HudsonWar war = r.getHudsonWar().firstEntry().getValue();
-        discover(war.getCoreArtifact());
-        modules.put(war.getCoreArtifact(), new Module(war.getCoreArtifact(),"http://github.com/jenkinsci/jenkins/","Jenkins Core") {
+        final MavenArtifact core = war.getCoreArtifact();
+        discover(core);
+        modules.put(core, new Module(core,"http://github.com/jenkinsci/jenkins/","Jenkins Core") {
             @Override
             String getWikiLink() {
                 return "[Building Jenkins]";

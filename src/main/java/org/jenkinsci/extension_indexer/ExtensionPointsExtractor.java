@@ -38,11 +38,13 @@ import java.util.Locale;
  */
 @SuppressWarnings({"Since15"})
 public class ExtensionPointsExtractor {
+    /**
+     * Module whose extensions are being scanned.
+     */
+    private MavenArtifact artifact;
 
-    private MavenArtifact hpi;
-
-    public ExtensionPointsExtractor(MavenArtifact hpi) {
-        this.hpi = hpi;
+    public ExtensionPointsExtractor(MavenArtifact artifact) {
+        this.artifact = artifact;
     }
 
     public List<Extension> extract() throws IOException, InterruptedException {
@@ -54,9 +56,9 @@ public class ExtensionPointsExtractor {
         try {
             File srcdir = new File(tempDir,"src");
             File libdir = new File(tempDir,"lib");
-            FileUtils.unzip(hpi.resolveSources(), srcdir);
+            FileUtils.unzip(artifact.resolveSources(), srcdir);
 
-            File pom = hpi.resolvePOM();
+            File pom = artifact.resolvePOM();
             FileUtils.copyFile(pom, new File(srcdir, "pom.xml"));
             downloadDependencies(srcdir,libdir);
 
@@ -107,7 +109,7 @@ public class ExtensionPointsExtractor {
                 private void checkIfExtension(TreePath pathToRoot, TypeElement root, TypeElement e) {
                     for (TypeMirror i : e.getInterfaces()) {
                         if (types.asElement(i).equals(extensionPoint))
-                            r.add(new Extension(hpi, javac, trees, root, pathToRoot, e));
+                            r.add(new Extension(artifact, javac, trees, root, pathToRoot, e));
                         checkIfExtension(pathToRoot,root,(TypeElement)types.asElement(i));
                     }
                     TypeMirror s = e.getSuperclass();
