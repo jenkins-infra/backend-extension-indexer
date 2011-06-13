@@ -107,6 +107,8 @@ public class ExtensionPointsExtractor {
                 }
 
                 private void checkIfExtension(TreePath pathToRoot, TypeElement root, TypeElement e) {
+                    if (e==null)    return; // if the compilation fails, this can happen
+
                     for (TypeMirror i : e.getInterfaces()) {
                         if (types.asElement(i).equals(extensionPoint))
                             r.add(new Extension(artifact, javac, trees, root, pathToRoot, e));

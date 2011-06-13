@@ -2,12 +2,16 @@ package org.jenkinsci.extension_indexer;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+import org.apache.maven.artifact.resolver.AbstractArtifactResolutionException;
+import org.codehaus.plexus.PlexusContainerException;
+import org.codehaus.plexus.component.repository.exception.ComponentLookupException;
 import org.jvnet.hudson.update_center.ConfluencePluginList;
 import org.jvnet.hudson.update_center.HudsonWar;
 import org.jvnet.hudson.update_center.MavenArtifact;
 import org.jvnet.hudson.update_center.MavenRepositoryImpl;
 import org.jvnet.hudson.update_center.Plugin;
 import org.jvnet.hudson.update_center.PluginHistory;
+import org.sonatype.nexus.index.context.UnsupportedExistingLuceneIndexException;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -23,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -59,13 +64,18 @@ public class ExtensionPointListGenerator {
                 w.println(getSynopsis(e));
                 w.println(e.getConfluenceDoc());
             }
+            if (implementations.isEmpty())
+                w.println("(No known implementation)");
             w.println("{expand}");
             w.println("");
         }
 
         private String getSynopsis(Extension e) {
+            final Module m = modules.get(e.artifact);
+            if (m==null)
+                throw new IllegalStateException("Unable to find module for "+e.artifact);
             return MessageFormat.format("*Defined in*: {0}  ([javadoc|{1}@javadoc])\n",
-                    modules.get(e.artifact).getWikiLink(), e.extensionPoint.getQualifiedName());
+                    m.getWikiLink(), e.extensionPoint.getQualifiedName());
         }
     }
 
@@ -119,36 +129,7 @@ public class ExtensionPointListGenerator {
             }
         });
 
-        ExecutorService svc = Executors.newFixedThreadPool(4);
-        Set<Future> futures = new HashSet<Future>();
-        for (final PluginHistory p : new ArrayList<PluginHistory>(r.listHudsonPlugins()).subList(0,5)) {
-            futures.add(svc.submit(new Runnable() {
-                public void run() {
-                    try {
-                        System.out.println(p.artifactId);
-                        discover(p.latest());
-                        synchronized (modules) {
-                            Plugin pi = new Plugin(p,cpl);
-                            modules.put(p.latest(), new Module(p.latest(),pi.getWiki(),pi.getTitle()) {
-                                @Override
-                                String getWikiLink() {
-                                    return '['+displayName+']';
-                                }
-                            });
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        // skip to the next plugin
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }));
-        }
-        for (Future f : futures) {
-            f.get();
-        }
-        svc.shutdown();
+        processPlugins(r, cpl);
 
         JSONObject all = new JSONObject();
         for (Family f : families.values()) {
@@ -176,6 +157,40 @@ public class ExtensionPointListGenerator {
         FileUtils.writeStringToFile(new File("extension-points.json"), container.toString(2));
 
         generateConfluencePage();
+    }
+
+    private void processPlugins(MavenRepositoryImpl r, final ConfluencePluginList cpl) throws Exception {
+        ExecutorService svc = Executors.newFixedThreadPool(4);
+        try {
+            Set<Future> futures = new HashSet<Future>();
+            for (final PluginHistory p : new ArrayList<PluginHistory>(r.listHudsonPlugins())/*.subList(0,200)*/) {
+                futures.add(svc.submit(new Runnable() {
+                    public void run() {
+                        try {
+                            System.out.println(p.artifactId);
+                            discover(p.latest());
+                            synchronized (modules) {
+                                Plugin pi = new Plugin(p,cpl);
+                                modules.put(p.latest(), new Module(p.latest(),pi.getWiki(),pi.getTitle()) {
+                                    @Override
+                                    String getWikiLink() {
+                                        return '['+displayName+']';
+                                    }
+                                });
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Failed to process "+p.artifactId);
+                            e.printStackTrace();
+                        }
+                    }
+                }));
+            }
+            for (Future f : futures) {
+                f.get();
+            }
+        } finally {
+            svc.shutdown();
+        }
     }
 
     private void generateConfluencePage() throws FileNotFoundException {
