@@ -24,6 +24,7 @@
           </archive>
         </configuration>
       </plugin>
+      <!--
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <executions>
@@ -40,31 +41,22 @@
           </execution>
         </executions>
       </plugin>
+      -->
     </plugins>
   </build>
 
-  <properties>
-    <keyName>${project.basedir}/test</keyName>
-  </properties>
-
+  
   <dependencies>
     <dependency>
       <groupId>org.jenkins-ci</groupId>
       <artifactId>update-center2</artifactId>
-      <version>1.8-SNAPSHOT</version>
+      <version>1.9-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.jvnet.sorcerer</groupId>
       <artifactId>sorcerer-javac</artifactId>
       <version>0.8</version>
     </dependency>
-    <!--dependency>
-      <groupId>com.sun</groupId>
-      <artifactId>tools</artifactId>
-      <version>1.6</version>
-      <scope>system</scope>
-      <systemPath>${java.home}/../lib/tools.jar</systemPath>
-    </dependency-->
   </dependencies>
 
   <repositories>

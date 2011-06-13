@@ -1,4 +1,4 @@
-package org.jvnet.hudson.update_center;
+package org.jenkinsci.extension_indexer;
 
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
@@ -8,6 +8,7 @@ import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.api.JavacTool;
 import org.apache.commons.io.IOUtils;
+import org.jvnet.hudson.update_center.MavenArtifact;
 
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.NoType;

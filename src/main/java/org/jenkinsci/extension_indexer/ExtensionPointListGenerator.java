@@ -1,9 +1,15 @@
-package org.jvnet.hudson.update_center;
+package org.jenkinsci.extension_indexer;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+import org.jvnet.hudson.update_center.ConfluencePluginList;
+import org.jvnet.hudson.update_center.HPI;
+import org.jvnet.hudson.update_center.HudsonWar;
+import org.jvnet.hudson.update_center.MavenArtifact;
+import org.jvnet.hudson.update_center.MavenRepositoryImpl;
+import org.jvnet.hudson.update_center.Plugin;
+import org.jvnet.hudson.update_center.PluginHistory;
 
-import javax.lang.model.element.Name;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -16,7 +22,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Command-line tool to list up extension points and their implementations into a JSON file.

@@ -1,4 +1,4 @@
-package org.jvnet.hudson.update_center;
+package org.jenkinsci.extension_indexer;
 
 import java.io.BufferedOutputStream;
 import java.io.File;

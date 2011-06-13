@@ -1,4 +1,4 @@
-package org.jvnet.hudson.update_center;
+package org.jenkinsci.extension_indexer;
 
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
@@ -7,6 +7,7 @@ import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
 import net.sf.json.JSONObject;
+import org.jvnet.hudson.update_center.MavenArtifact;
 
 import javax.lang.model.element.TypeElement;
 import java.io.File;
