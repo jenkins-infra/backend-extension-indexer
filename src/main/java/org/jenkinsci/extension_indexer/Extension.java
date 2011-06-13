@@ -106,26 +106,33 @@ public final class Extension {
     }
 
     /**
-     * Javadoc converted to the confluence markup.
+     * Javadoc excerpt converted to the confluence markup.
      */
     public String getConfluenceDoc() {
         String javadoc = getJavadoc();
         if(javadoc==null)   return null;
 
-        {// replace @link
-            Matcher m = LINK.matcher(javadoc);
-            StringBuffer sb = new StringBuffer();
-            while(m.find()) {
-                String simpleName = m.group(1);
-                m.appendReplacement(sb, '['+simpleName+"@javadoc]");
+        StringBuilder output = new StringBuilder(javadoc.length());
+        for( String line : javadoc.split("\n")) {
+            if(line.trim().length()==0) break;
+
+            {// replace @link
+                Matcher m = LINK.matcher(line);
+                StringBuffer sb = new StringBuffer();
+                while(m.find()) {
+                    String simpleName = m.group(1);
+                    m.appendReplacement(sb, '['+simpleName+"@javadoc]");
+                }
+                m.appendTail(sb);
+                line = sb.toString();
             }
-            m.appendTail(sb);
-            javadoc = sb.toString();
+
+            for (Macro m : MACROS)
+                line = m.replace(line);
+            output.append(line).append(' ');
         }
 
-        for (Macro m : MACROS)
-            javadoc = m.replace(javadoc);
-        return javadoc;
+        return output.toString();
     }
 
     /**

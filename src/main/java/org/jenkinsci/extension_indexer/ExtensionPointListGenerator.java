@@ -166,6 +166,7 @@ public class ExtensionPointListGenerator {
 
         PrintWriter w = new PrintWriter(new File("extension-points.page"));
         for (Family f : families.values()) {
+            if (f.definition==null)     continue;   // skip undefined extension points
             f.formatAsConfluencePage(w);
         }
         w.close();
