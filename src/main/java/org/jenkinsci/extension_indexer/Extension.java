@@ -11,6 +11,7 @@ import org.jvnet.hudson.update_center.MavenArtifact;
 
 import javax.lang.model.element.TypeElement;
 import java.io.File;
+import java.io.PrintWriter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -134,6 +135,9 @@ public final class Extension {
         return artifact.artifact.artifactId;
     }
 
+    /**
+     * Gets the information captured in this object as JSON.
+     */
     public JSONObject toJSON() {
         JSONObject i = new JSONObject();
         i.put("className",implementation.getQualifiedName().toString());

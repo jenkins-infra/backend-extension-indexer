@@ -3,7 +3,6 @@ package org.jenkinsci.extension_indexer;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.jvnet.hudson.update_center.ConfluencePluginList;
-import org.jvnet.hudson.update_center.HPI;
 import org.jvnet.hudson.update_center.HudsonWar;
 import org.jvnet.hudson.update_center.MavenArtifact;
 import org.jvnet.hudson.update_center.MavenRepositoryImpl;
@@ -12,6 +11,7 @@ import org.jvnet.hudson.update_center.PluginHistory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,13 +30,59 @@ import java.util.concurrent.Future;
  */
 public class ExtensionPointListGenerator {
     private final Map<String,Family> families = new HashMap<String,Family>();
+    private final Map<MavenArtifact,Module> modules = new HashMap<MavenArtifact,Module>();
 
+
+    /**
+     * Relationship between definition and implementations of the extension points.
+     */
     public class Family {
         Extension definition;
         final List<Extension> implementations = new ArrayList<Extension>();
 
         public String getName() {
             return definition.extensionPoint.getQualifiedName().toString();
+        }
+
+        void formatAsConfluencePage(PrintWriter w) {
+            w.println("h1." + definition.extensionPoint.getQualifiedName());
+            w.println(definition.getConfluenceDoc());
+            w.println();
+            w.println("{expand:title=Click to see known implementations}");
+            for (Extension e : implementations) {
+                w.println("h2."+e.implementation.getQualifiedName()+" in "+modules.get(e.artifact).getWikiLink());
+                w.println(e.getConfluenceDoc());
+            }
+            w.println("{expand}");
+            w.println("");
+        }
+    }
+
+    /**
+     * Information about the module that we scanned extensions.
+     */
+    abstract class Module {
+        final MavenArtifact artifact;
+        final String url;
+        final String displayName;
+
+        protected Module(MavenArtifact artifact, String url, String displayName) {
+            this.artifact = artifact;
+            this.url = url;
+            this.displayName = displayName;
+        }
+
+        /**
+         * Returns a Confluence-format link to point to this module.
+         */
+        abstract String getWikiLink();
+
+        JSONObject toJSON() {
+            JSONObject o = new JSONObject();
+            o.put("gav",artifact.getGavId());
+            o.put("url",url);
+            o.put("displayName",displayName);
+            return o;
         }
     }
 
@@ -52,12 +98,14 @@ public class ExtensionPointListGenerator {
 
         final ConfluencePluginList cpl = new ConfluencePluginList();
 
-        // this object captures information about modules where extensions are defined/found.
-        final JSONObject artifacts = new JSONObject();
-
         HudsonWar war = r.getHudsonWar().firstEntry().getValue();
         discover(war.getCoreArtifact());
-        artifacts.put(war.getCoreArtifact().getGavId(), toJSON(war, cpl));
+        modules.put(war.getCoreArtifact(), new Module(war.getCoreArtifact(),"http://github.com/jenkinsci/jenkins/","Jenkins Core") {
+            @Override
+            String getWikiLink() {
+                return "[Building Jenkins]";
+            }
+        });
 
         ExecutorService svc = Executors.newFixedThreadPool(4);
         Set<Future> futures = new HashSet<Future>();
@@ -67,8 +115,14 @@ public class ExtensionPointListGenerator {
                     try {
                         System.out.println(p.artifactId);
                         discover(p.latest());
-                        synchronized (artifacts) {
-                            artifacts.put(p.latest().getGavId(), toJSON(p.latest(), cpl));
+                        synchronized (modules) {
+                            Plugin pi = new Plugin(p,cpl);
+                            modules.put(p.latest(), new Module(p.latest(),pi.getWiki(),pi.getTitle()) {
+                                @Override
+                                String getWikiLink() {
+                                    return '['+displayName+']';
+                                }
+                            });
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -97,11 +151,23 @@ public class ExtensionPointListGenerator {
             all.put(f.getName(),o);
         }
 
+        // this object captures information about modules where extensions are defined/found.
+        final JSONObject artifacts = new JSONObject();
+        for (Module m : modules.values()) {
+            artifacts.put(m.artifact.getGavId(),m.toJSON());
+        }
+
         JSONObject container = new JSONObject();
         container.put("extensionPoints",all);
         container.put("artifacts",artifacts);
 
         FileUtils.writeStringToFile(new File("extension-points.json"), container.toString(2));
+
+        PrintWriter w = new PrintWriter(new File("extension-points.page"));
+        for (Family f : families.values()) {
+            f.formatAsConfluencePage(w);
+        }
+        w.close();
     }
 
     private void discover(MavenArtifact a) throws IOException, InterruptedException {
@@ -123,30 +189,5 @@ public class ExtensionPointListGenerator {
                 }
             }
         }
-    }
-
-
-    /**
-     * Builds information about an artifact into JSON.
-     */
-    private JSONObject toJSON(MavenArtifact a) throws IOException, InterruptedException {
-        JSONObject o = new JSONObject();
-        o.put("gav",a.getGavId());
-        return o;
-    }
-
-    private JSONObject toJSON(HPI hpi, ConfluencePluginList cpl) throws IOException, InterruptedException {
-        JSONObject o = toJSON(hpi);
-        Plugin p = new Plugin(hpi,cpl);
-        o.put("url",p.getWiki());
-        o.put("title",p.getTitle());
-        return o;
-    }
-
-    private JSONObject toJSON(HudsonWar war, ConfluencePluginList cpl) throws IOException, InterruptedException {
-        JSONObject o = toJSON(war.getCoreArtifact());
-        o.put("url","https://github.com/jenkinsci/jenkins");
-        o.put("title","Jenkins Core");
-        return o;
     }
 }
