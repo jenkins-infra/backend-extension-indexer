@@ -10,6 +10,7 @@ import org.jvnet.hudson.update_center.Plugin;
 import org.jvnet.hudson.update_center.PluginHistory;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
@@ -17,8 +18,10 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -46,13 +49,13 @@ public class ExtensionPointListGenerator {
         }
 
         void formatAsConfluencePage(PrintWriter w) {
-            w.println("h1." + definition.extensionPoint.getQualifiedName());
+            w.println("h2." + definition.extensionPoint.getQualifiedName());
             w.println(getSynopsis(definition));
             w.println(definition.getConfluenceDoc());
             w.println();
-            w.println("{expand:title=Click to see known implementations}");
+            w.println("{expand:title=Implementations}");
             for (Extension e : implementations) {
-                w.println("h2."+e.implementation.getQualifiedName());
+                w.println("h3."+e.implementation.getQualifiedName());
                 w.println(getSynopsis(e));
                 w.println(e.getConfluenceDoc());
             }
@@ -172,11 +175,26 @@ public class ExtensionPointListGenerator {
 
         FileUtils.writeStringToFile(new File("extension-points.json"), container.toString(2));
 
-        PrintWriter w = new PrintWriter(new File("extension-points.page"));
-        w.println("{toc:maxLevel=1}\n");
+        generateConfluencePage();
+    }
+
+    private void generateConfluencePage() throws FileNotFoundException {
+        Map<Module,List<Family>> byModule = new LinkedHashMap<Module,List<Family>>();
         for (Family f : families.values()) {
             if (f.definition==null)     continue;   // skip undefined extension points
-            f.formatAsConfluencePage(w);
+
+            Module key = modules.get(f.definition.artifact);
+            List<Family> value = byModule.get(key);
+            if (value==null)    byModule.put(key,value=new ArrayList<Family>());
+            value.add(f);
+        }
+
+        PrintWriter w = new PrintWriter(new File("extension-points.page"));
+        w.println("{toc:maxLevel=2}\n");
+        for (Entry<Module, List<Family>> e : byModule.entrySet()) {
+            w.println("h1.Extension Points in "+e.getKey().getWikiLink());
+            for (Family f : e.getValue())
+                f.formatAsConfluencePage(w);
         }
         w.close();
     }
