@@ -159,7 +159,7 @@ public class ExtensionPointsExtractor {
         int result = proc.waitFor();
         if (result != 0) {
             System.out.write(output.toByteArray());
-            throw new IOException("Maven didn't like this! " + pomDir.getAbsolutePath());
+            throw new IOException("Maven didn't like this (exit code="+result+")! " + pomDir.getAbsolutePath());
         }
     }
 }
