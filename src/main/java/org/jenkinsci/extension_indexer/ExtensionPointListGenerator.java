@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -46,15 +47,22 @@ public class ExtensionPointListGenerator {
 
         void formatAsConfluencePage(PrintWriter w) {
             w.println("h1." + definition.extensionPoint.getQualifiedName());
+            w.println(getSynopsis(definition));
             w.println(definition.getConfluenceDoc());
             w.println();
             w.println("{expand:title=Click to see known implementations}");
             for (Extension e : implementations) {
-                w.println("h2."+e.implementation.getQualifiedName()+" in "+modules.get(e.artifact).getWikiLink());
+                w.println("h2."+e.implementation.getQualifiedName());
+                w.println(getSynopsis(e));
                 w.println(e.getConfluenceDoc());
             }
             w.println("{expand}");
             w.println("");
+        }
+
+        private String getSynopsis(Extension e) {
+            return MessageFormat.format("*Defined in*: {0}  ([javadoc|{1}@javadoc])\n",
+                    modules.get(e.artifact).getWikiLink(), e.extensionPoint.getQualifiedName());
         }
     }
 
@@ -104,7 +112,7 @@ public class ExtensionPointListGenerator {
         modules.put(core, new Module(core,"http://github.com/jenkinsci/jenkins/","Jenkins Core") {
             @Override
             String getWikiLink() {
-                return "[Building Jenkins]";
+                return "[Jenkins Core|Building Jenkins]";
             }
         });
 
@@ -165,6 +173,7 @@ public class ExtensionPointListGenerator {
         FileUtils.writeStringToFile(new File("extension-points.json"), container.toString(2));
 
         PrintWriter w = new PrintWriter(new File("extension-points.page"));
+        w.println("{toc:maxLevel=1}\n");
         for (Family f : families.values()) {
             if (f.definition==null)     continue;   // skip undefined extension points
             f.formatAsConfluencePage(w);
