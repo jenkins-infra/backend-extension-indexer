@@ -203,6 +203,9 @@ public class ExtensionPointListGenerator {
         return r;
     }
 
+    /**
+     * Walks over the plugins, record {@link #modules} and call {@link #discover(MavenArtifact)}.
+     */
     private void processPlugins(MavenRepository r) throws Exception {
         ExecutorService svc = Executors.newFixedThreadPool(4);
         try {
