@@ -59,6 +59,9 @@ public class ExtensionPointListGenerator {
     private ExtensionPointsExtractor extractor = new ExtensionPointsExtractor();
     private SorcererGenerator sorcererGenerator = new SorcererGenerator();
 
+    private final ConfluencePluginList cpl;
+
+
     /**
      * Relationship between definition and implementations of the extension points.
      */
@@ -128,6 +131,10 @@ public class ExtensionPointListGenerator {
         }
     }
 
+    public ExtensionPointListGenerator() throws IOException, ServiceException {
+        cpl = new ConfluencePluginList();
+    }
+
     public static void main(String[] args) throws Exception {
         ExtensionPointListGenerator app = new ExtensionPointListGenerator();
         CmdLineParser p = new CmdLineParser(app);
@@ -145,8 +152,6 @@ public class ExtensionPointListGenerator {
         r.addRemoteRepository("public",
                 new URL("http://repo.jenkins-ci.org/public/"));
 
-        final ConfluencePluginList cpl = new ConfluencePluginList();
-
         HudsonWar war = r.getHudsonWar().firstEntry().getValue();
         final MavenArtifact core = war.getCoreArtifact();
         discover(core);
@@ -157,7 +162,7 @@ public class ExtensionPointListGenerator {
             }
         });
 
-        processPlugins(r, cpl);
+        processPlugins(r);
 
         if (wikiFile!=null) {
             JSONObject all = new JSONObject();
@@ -198,7 +203,7 @@ public class ExtensionPointListGenerator {
         return r;
     }
 
-    private void processPlugins(MavenRepository r, final ConfluencePluginList cpl) throws Exception {
+    private void processPlugins(MavenRepository r) throws Exception {
         ExecutorService svc = Executors.newFixedThreadPool(4);
         try {
             Set<Future> futures = new HashSet<Future>();
@@ -274,7 +279,9 @@ public class ExtensionPointListGenerator {
 
     private void discover(MavenArtifact a) throws IOException, InterruptedException {
         if (sorcererDir!=null) {
-            sorcererGenerator.generate(a,sorcererDir);
+            final File dir = new File(sorcererDir, a.artifact.artifactId);
+            dir.mkdirs();
+            sorcererGenerator.generate(a,dir);
         }
         if (wikiFile!=null) {
             for (Extension e : extractor.extract(a)) {
