@@ -57,7 +57,7 @@
     </dependency>
     <dependency>
       <groupId>org.jvnet.sorcerer</groupId>
-      <artifactId>sorcerer-javac</artifactId>
+      <artifactId>sorcerer-core</artifactId>
       <version>0.8</version>
     </dependency>
     <dependency>

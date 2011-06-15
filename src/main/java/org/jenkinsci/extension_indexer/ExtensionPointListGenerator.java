@@ -9,6 +9,7 @@ import org.jvnet.hudson.confluence.Confluence;
 import org.jvnet.hudson.update_center.ConfluencePluginList;
 import org.jvnet.hudson.update_center.HudsonWar;
 import org.jvnet.hudson.update_center.MavenArtifact;
+import org.jvnet.hudson.update_center.MavenRepository;
 import org.jvnet.hudson.update_center.MavenRepositoryImpl;
 import org.jvnet.hudson.update_center.Plugin;
 import org.jvnet.hudson.update_center.PluginHistory;
@@ -46,8 +47,17 @@ public class ExtensionPointListGenerator {
     private final Map<String,Family> families = new HashMap<String,Family>();
     private final Map<MavenArtifact,Module> modules = new HashMap<MavenArtifact,Module>();
 
-    @Option(name="-wiki",usage="Upload the result to the specified Wiki page")
+    @Option(name="-wiki",usage="Generate the extension list index and write it out to the specified file.")
+    public File wikiFile;
+
+    @Option(name="-wikiUpload",usage="Upload the result to the specified Wiki page")
     public String wikiPage;
+
+    @Option(name="-sorcerer",usage="Generate sorcerer reports")
+    public File sorcererDir;
+
+    private ExtensionPointsExtractor extractor = new ExtensionPointsExtractor();
+    private SorcererGenerator sorcererGenerator = new SorcererGenerator();
 
     /**
      * Relationship between definition and implementations of the extension points.
@@ -126,6 +136,11 @@ public class ExtensionPointListGenerator {
     }
 
     public void run() throws Exception {
+        if (wikiFile==null && sorcererDir==null)
+            throw new IllegalStateException("Nothing to do. Either -wiki or -sorcerer is needed");
+        if (wikiPage!=null && wikiFile==null)
+            throw new IllegalStateException("Can't upload the page without generating a Wiki file.");
+
         MavenRepositoryImpl r = new MavenRepositoryImpl();
         r.addRemoteRepository("public",
                 new URL("http://repo.jenkins-ci.org/public/"));
@@ -144,36 +159,46 @@ public class ExtensionPointListGenerator {
 
         processPlugins(r, cpl);
 
-        JSONObject all = new JSONObject();
-        for (Family f : families.values()) {
-            if (f.definition==null)     continue;   // skip undefined extension points
-            JSONObject o = f.definition.toJSON();
+        if (wikiFile!=null) {
+            JSONObject all = new JSONObject();
+            for (Family f : families.values()) {
+                if (f.definition==null)     continue;   // skip undefined extension points
+                JSONObject o = f.definition.toJSON();
 
-            JSONArray use = new JSONArray();
-            for (Extension impl : f.implementations)
-                use.add(impl.toJSON());
-            o.put("implementations", use);
+                JSONArray use = new JSONArray();
+                for (Extension impl : f.implementations)
+                    use.add(impl.toJSON());
+                o.put("implementations", use);
 
-            all.put(f.getName(),o);
+                all.put(f.getName(),o);
+            }
+
+            // this object captures information about modules where extensions are defined/found.
+            final JSONObject artifacts = new JSONObject();
+            for (Module m : modules.values()) {
+                artifacts.put(m.artifact.getGavId(),m.toJSON());
+            }
+
+            JSONObject container = new JSONObject();
+            container.put("extensionPoints",all);
+            container.put("artifacts",artifacts);
+
+            FileUtils.writeStringToFile(new File("extension-points.json"), container.toString(2));
+
+            generateConfluencePage();
+            uploadToWiki();
         }
-
-        // this object captures information about modules where extensions are defined/found.
-        final JSONObject artifacts = new JSONObject();
-        for (Module m : modules.values()) {
-            artifacts.put(m.artifact.getGavId(),m.toJSON());
-        }
-
-        JSONObject container = new JSONObject();
-        container.put("extensionPoints",all);
-        container.put("artifacts",artifacts);
-
-        FileUtils.writeStringToFile(new File("extension-points.json"), container.toString(2));
-
-        File page = generateConfluencePage();
-        uploadToWiki(page);
     }
 
-    private void processPlugins(MavenRepositoryImpl r, final ConfluencePluginList cpl) throws Exception {
+    private MavenRepositoryImpl createRepository() throws Exception {
+        MavenRepositoryImpl r = new MavenRepositoryImpl();
+        r.addRemoteRepository("java.net2",
+                new File("updates.jenkins-ci.org"),
+                new URL("http://maven.glassfish.org/content/groups/public/"));
+        return r;
+    }
+
+    private void processPlugins(MavenRepository r, final ConfluencePluginList cpl) throws Exception {
         ExecutorService svc = Executors.newFixedThreadPool(4);
         try {
             Set<Future> futures = new HashSet<Future>();
@@ -207,7 +232,7 @@ public class ExtensionPointListGenerator {
         }
     }
 
-    private File generateConfluencePage() throws IOException {
+    private void generateConfluencePage() throws IOException {
         Map<Module,List<Family>> byModule = new LinkedHashMap<Module,List<Family>>();
         for (Family f : families.values()) {
             if (f.definition==null)     continue;   // skip undefined extension points
@@ -218,9 +243,8 @@ public class ExtensionPointListGenerator {
             value.add(f);
         }
 
-        File page = new File("extension-points.page");
-        PrintWriter w = new PrintWriter(page);
-        IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("preamble.txt")),w);
+        PrintWriter w = new PrintWriter(wikiFile);
+        IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("preamble.txt")), w);
         for (Entry<Module, List<Family>> e : byModule.entrySet()) {
             w.println("h1.Extension Points in "+e.getKey().getWikiLink());
             List<Family> fam = e.getValue();
@@ -229,10 +253,9 @@ public class ExtensionPointListGenerator {
                 f.formatAsConfluencePage(w);
         }
         w.close();
-        return page;
     }
 
-    private void uploadToWiki(File page) throws IOException, ServiceException {
+    private void uploadToWiki() throws IOException, ServiceException {
         if (wikiPage==null) return;
         System.out.println("Uploading to " + wikiPage);
         ConfluenceSoapService service = Confluence.connect(new URL("https://wiki.jenkins-ci.org/"));
@@ -245,26 +268,31 @@ public class ExtensionPointListGenerator {
         String token = service.login(props.getProperty("userName"),props.getProperty("password"));
 
         RemotePage p = service.getPage(token, "JENKINS", wikiPage);
-        p.setContent(FileUtils.readFileToString(page));
+        p.setContent(FileUtils.readFileToString(wikiFile));
         service.storePage(token,p);
     }
 
     private void discover(MavenArtifact a) throws IOException, InterruptedException {
-        for (Extension e : new ExtensionPointsExtractor(a).extract()) {
-            synchronized (families) {
-                System.out.printf("Found %s as %s\n",
-                        e.implementation.getQualifiedName(),
-                        e.extensionPoint.getQualifiedName());
+        if (sorcererDir!=null) {
+            sorcererGenerator.generate(a,sorcererDir);
+        }
+        if (wikiFile!=null) {
+            for (Extension e : extractor.extract(a)) {
+                synchronized (families) {
+                    System.out.printf("Found %s as %s\n",
+                            e.implementation.getQualifiedName(),
+                            e.extensionPoint.getQualifiedName());
 
-                String key = e.extensionPoint.getQualifiedName().toString();
-                Family f = families.get(key);
-                if (f==null)    families.put(key,f=new Family());
+                    String key = e.extensionPoint.getQualifiedName().toString();
+                    Family f = families.get(key);
+                    if (f==null)    families.put(key,f=new Family());
 
-                if (e.isDefinition()) {
-                    assert f.definition==null;
-                    f.definition = e;
-                } else {
-                    f.implementations.add(e);
+                    if (e.isDefinition()) {
+                        assert f.definition==null;
+                        f.definition = e;
+                    } else {
+                        f.implementations.add(e);
+                    }
                 }
             }
         }

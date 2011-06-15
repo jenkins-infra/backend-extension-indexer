@@ -42,37 +42,24 @@ public class ExtensionPointsExtractor {
      * Module whose extensions are being scanned.
      */
     private MavenArtifact artifact;
+    private SourceAndLibs sal;
 
-    public ExtensionPointsExtractor(MavenArtifact artifact) {
-        this.artifact = artifact;
+    public List<Extension> extract(MavenArtifact artifact) throws IOException, InterruptedException {
+        return extract(artifact,SourceAndLibs.create(artifact));
     }
 
-    public List<Extension> extract() throws IOException, InterruptedException {
-        File tempDir = File.createTempFile("jenkins","extPoint");
-        tempDir.delete();
-        tempDir.mkdirs();
+    public List<Extension> extract(final MavenArtifact artifact, SourceAndLibs sal) throws IOException, InterruptedException {
+        this.artifact = artifact;
+        this.sal = sal;
 
         StandardJavaFileManager fileManager = null;
         try {
-            File srcdir = new File(tempDir,"src");
-            File libdir = new File(tempDir,"lib");
-            FileUtils.unzip(artifact.resolveSources(), srcdir);
-
-            File pom = artifact.resolvePOM();
-            FileUtils.copyFile(pom, new File(srcdir, "pom.xml"));
-            downloadDependencies(srcdir,libdir);
-
             JavaCompiler javac1 = JavacTool.create();
-            DiagnosticListener<? super JavaFileObject> errorListener = new DiagnosticListener<JavaFileObject>() {
-                public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-                    //TODO report
-                    System.out.println(diagnostic);
-                }
-            };
+            DiagnosticListener<JavaFileObject> errorListener = createErrorListener();
             fileManager = javac1.getStandardFileManager(errorListener, Locale.getDefault(), Charset.defaultCharset());
 
 
-            fileManager.setLocation(StandardLocation.CLASS_PATH, generateClassPath(libdir));
+            fileManager.setLocation(StandardLocation.CLASS_PATH, sal.getClassPath());
 
             // annotation processing appears to cause the source files to be reparsed
             // (even though I couldn't find exactly where it's done), which causes
@@ -81,7 +68,7 @@ public class ExtensionPointsExtractor {
             // So for now, don't perform annotation processing
             List<String> options = Arrays.asList("-proc:none");
 
-            Iterable<? extends JavaFileObject> files = fileManager.getJavaFileObjectsFromFiles(generateSources(srcdir));
+            Iterable<? extends JavaFileObject> files = fileManager.getJavaFileObjectsFromFiles(sal.getSourceFiles());
             JavaCompiler.CompilationTask task = javac1.getTask(null, fileManager, errorListener, options, null, files);
             final JavacTask javac = (JavacTask) task;
             final Trees trees = Trees.instance(javac);
@@ -125,41 +112,18 @@ public class ExtensionPointsExtractor {
 
             return r;
         } finally {
-            FileUtils.deleteDirectory(tempDir);
             if (fileManager!=null)
                 fileManager.close();
+            sal.close();
         }
     }
 
-    private Iterable<? extends File> generateClassPath(File dependencies) {
-        return FileUtils.getFileIterator(dependencies, "jar");
-    }
-
-    private Iterable<? extends File> generateSources(File sourceDir) {
-        return FileUtils.getFileIterator(sourceDir, "java");
-    }
-
-    private void downloadDependencies(File pomDir, File destDir) throws IOException, InterruptedException {
-        destDir.mkdirs();
-        ProcessBuilder builder = new ProcessBuilder("mvn",
-                "dependency:copy-dependencies",
-                "-DincludeScope=compile",
-                "-DoutputDirectory=" + destDir.getAbsolutePath());
-        builder.directory(pomDir);
-        builder.redirectErrorStream(true);
-        Process proc = builder.start();
-
-        // capture the output, but only report it in case of an error
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        proc.getOutputStream().close();
-        IOUtils.copy(proc.getInputStream(),output);
-        proc.getErrorStream().close();
-        proc.getInputStream().close();
-
-        int result = proc.waitFor();
-        if (result != 0) {
-            System.out.write(output.toByteArray());
-            throw new IOException("Maven didn't like this (exit code="+result+")! " + pomDir.getAbsolutePath());
-        }
+    protected DiagnosticListener<JavaFileObject> createErrorListener() {
+        return new DiagnosticListener<JavaFileObject>() {
+            public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
+                //TODO report
+                System.out.println(diagnostic);
+            }
+        };
     }
 }

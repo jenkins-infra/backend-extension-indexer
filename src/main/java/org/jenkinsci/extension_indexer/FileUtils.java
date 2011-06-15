@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -64,7 +65,7 @@ public final class FileUtils extends org.apache.commons.io.FileUtils {
         out.close();
     }
 
-    public static Iterable<File> getFileIterator(File dir, String extension) {
+    public static List<File> getFileIterator(File dir, String extension) {
         Iterator i = iterateFiles(dir, new String[]{extension}, true);
         LinkedList<File> l = new LinkedList<File>();
         while(i.hasNext()) {
