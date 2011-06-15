@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.net.URL;
 
 /**
+ * Generates source code xref with sorcerer.
+ * 
  * @author Kohsuke Kawaguchi
  */
 public class SorcererGenerator {
