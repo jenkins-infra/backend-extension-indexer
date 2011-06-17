@@ -31,7 +31,7 @@ public class SorcererGenerator {
 
 
         ParsedSourceSet pss = a.analyze(new DiagnosticPrinter(System.out));
-        pss.addDependency(new Dependency.Sorcerer("jenkins-core",new URL("htttp://sorcerer.jenkins-ci.org/")));
+        pss.addDependency(new Dependency.Sorcerer("jenkins-core",new URL("http://sorcerer.jenkins-ci.org/")));
 
         // TODO: support i18n and use locale for HTML generation
         FrameSetGenerator fsg = new FrameSetGenerator(pss);
