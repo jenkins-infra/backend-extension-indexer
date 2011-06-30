@@ -25,6 +25,8 @@ import java.io.PrintWriter;
 import java.net.URL;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -52,7 +54,7 @@ public class ExtensionPointListGenerator {
     /**
      * Relationship between definition and implementations of the extension points.
      */
-    public class Family {
+    public class Family implements Comparable {
         Extension definition;
         final List<Extension> implementations = new ArrayList<Extension>();
 
@@ -83,6 +85,10 @@ public class ExtensionPointListGenerator {
                 throw new IllegalStateException("Unable to find module for "+e.artifact);
             return MessageFormat.format("*Defined in*: {0}  ([javadoc|{1}@javadoc])\n",
                     m.getWikiLink(), e.extensionPoint.getQualifiedName());
+        }
+
+        public int compareTo(Object that) {
+            return this.getName().compareTo(((Family)that).getName());
         }
     }
 
@@ -220,7 +226,9 @@ public class ExtensionPointListGenerator {
         IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("preamble.txt")),w);
         for (Entry<Module, List<Family>> e : byModule.entrySet()) {
             w.println("h1.Extension Points in "+e.getKey().getWikiLink());
-            for (Family f : e.getValue())
+            List<Family> fam = e.getValue();
+            Collections.sort(fam);
+            for (Family f : fam)
                 f.formatAsConfluencePage(w);
         }
         w.close();
