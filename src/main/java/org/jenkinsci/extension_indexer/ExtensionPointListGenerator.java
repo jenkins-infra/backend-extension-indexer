@@ -18,7 +18,6 @@ import org.kohsuke.args4j.Option;
 import javax.xml.rpc.ServiceException;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -26,7 +25,6 @@ import java.net.URL;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -129,9 +127,9 @@ public class ExtensionPointListGenerator {
 
     public void run() throws Exception {
         MavenRepositoryImpl r = new MavenRepositoryImpl();
-        r.addRemoteRepository("java.net2",
-                new File("updates.jenkins-ci.org"),
-                new URL("http://maven.glassfish.org/content/groups/public/"));
+        r.addRemoteRepository("public",
+                new File("repo.jenkins-ci.org"),
+                new URL("http://repo.jenkins-ci.org/public/"));
 
         final ConfluencePluginList cpl = new ConfluencePluginList();
 
