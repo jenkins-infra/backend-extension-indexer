@@ -53,7 +53,7 @@
     <dependency>
       <groupId>org.jenkins-ci</groupId>
       <artifactId>update-center2</artifactId>
-      <version>1.9</version>
+      <version>1.16</version>
     </dependency>
     <dependency>
       <groupId>org.jvnet.sorcerer</groupId>

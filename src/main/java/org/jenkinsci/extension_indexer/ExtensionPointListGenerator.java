@@ -128,7 +128,6 @@ public class ExtensionPointListGenerator {
     public void run() throws Exception {
         MavenRepositoryImpl r = new MavenRepositoryImpl();
         r.addRemoteRepository("public",
-                new File("repo.jenkins-ci.org"),
                 new URL("http://repo.jenkins-ci.org/public/"));
 
         final ConfluencePluginList cpl = new ConfluencePluginList();
