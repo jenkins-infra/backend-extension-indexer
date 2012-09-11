@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
  * (and extension point definition.)
  *
  * @author Kohsuke Kawaguchi
+ * @see ExtensionSummary
  */
 public final class Extension {
     /**

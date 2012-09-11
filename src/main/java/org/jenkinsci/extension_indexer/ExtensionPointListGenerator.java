@@ -13,6 +13,7 @@ import org.jvnet.hudson.update_center.MavenRepository;
 import org.jvnet.hudson.update_center.MavenRepositoryImpl;
 import org.jvnet.hudson.update_center.Plugin;
 import org.jvnet.hudson.update_center.PluginHistory;
+import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
@@ -43,6 +44,7 @@ import java.util.concurrent.Future;
  *
  * @author Kohsuke Kawaguchi
  */
+@SuppressWarnings("Since15")
 public class ExtensionPointListGenerator {
     private final Map<String,Family> families = new HashMap<String,Family>();
     private final Map<MavenArtifact,Module> modules = new HashMap<MavenArtifact,Module>();
@@ -56,6 +58,9 @@ public class ExtensionPointListGenerator {
     @Option(name="-sorcerer",usage="Generate sorcerer reports")
     public File sorcererDir;
 
+    @Argument
+    public List<String> args = new ArrayList<String>();
+
     private ExtensionPointsExtractor extractor = new ExtensionPointsExtractor();
     private SorcererGenerator sorcererGenerator = new SorcererGenerator();
 
@@ -66,23 +71,24 @@ public class ExtensionPointListGenerator {
      * Relationship between definition and implementations of the extension points.
      */
     public class Family implements Comparable {
-        Extension definition;
-        final List<Extension> implementations = new ArrayList<Extension>();
+        // from definition
+        ExtensionSummary definition;
+        private final List<ExtensionSummary> implementations = new ArrayList<ExtensionSummary>();
 
         public String getName() {
-            return definition.extensionPoint.getQualifiedName().toString();
+            return definition.extensionPoint;
         }
 
         void formatAsConfluencePage(PrintWriter w) {
-            w.println("h2." + definition.extensionPoint.getQualifiedName());
+            w.println("h2." + definition.extensionPoint);
             w.println(getSynopsis(definition));
-            w.println(definition.getConfluenceDoc());
+            w.println(definition.confluenceDoc);
             w.println();
             w.println("{expand:title=Implementations}");
-            for (Extension e : implementations) {
-                w.println("h3."+e.implementation.getQualifiedName());
+            for (ExtensionSummary e : implementations) {
+                w.println("h3."+e.implementation);
                 w.println(getSynopsis(e));
-                w.println(e.getConfluenceDoc());
+                w.println(e.confluenceDoc);
             }
             if (implementations.isEmpty())
                 w.println("(No known implementation)");
@@ -90,12 +96,12 @@ public class ExtensionPointListGenerator {
             w.println("");
         }
 
-        private String getSynopsis(Extension e) {
+        private String getSynopsis(ExtensionSummary e) {
             final Module m = modules.get(e.artifact);
             if (m==null)
                 throw new IllegalStateException("Unable to find module for "+e.artifact);
             return MessageFormat.format("*Defined in*: {0}  ([javadoc|{1}@javadoc])\n",
-                    m.getWikiLink(), e.extensionPoint.getQualifiedName());
+                    m.getWikiLink(), e.extensionPoint);
         }
 
         public int compareTo(Object that) {
@@ -168,11 +174,11 @@ public class ExtensionPointListGenerator {
             JSONObject all = new JSONObject();
             for (Family f : families.values()) {
                 if (f.definition==null)     continue;   // skip undefined extension points
-                JSONObject o = f.definition.toJSON();
+                JSONObject o = f.definition.json;
 
                 JSONArray use = new JSONArray();
-                for (Extension impl : f.implementations)
-                    use.add(impl.toJSON());
+                for (ExtensionSummary impl : f.implementations)
+                    use.add(impl.json);
                 o.put("implementations", use);
 
                 all.put(f.getName(),o);
@@ -211,6 +217,10 @@ public class ExtensionPointListGenerator {
         try {
             Set<Future> futures = new HashSet<Future>();
             for (final PluginHistory p : new ArrayList<PluginHistory>(r.listHudsonPlugins())/*.subList(0,200)*/) {
+                if (!args.isEmpty()) {
+                    if (!args.contains(p.artifactId))
+                        continue;   // skip
+                }
                 futures.add(svc.submit(new Runnable() {
                     public void run() {
                         try {
@@ -299,9 +309,9 @@ public class ExtensionPointListGenerator {
 
                     if (e.isDefinition()) {
                         assert f.definition==null;
-                        f.definition = e;
+                        f.definition = new ExtensionSummary(e);
                     } else {
-                        f.implementations.add(e);
+                        f.implementations.add(new ExtensionSummary(e));
                     }
                 }
             }
