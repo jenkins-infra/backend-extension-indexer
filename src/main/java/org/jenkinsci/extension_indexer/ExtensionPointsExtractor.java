@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -111,6 +112,11 @@ public class ExtensionPointsExtractor {
                 classScanner.scan(u,null);
 
             return r;
+        } catch (AssertionError e) {
+            // javac has thrown this exception for some input
+            System.err.println("Failed to analyze "+artifact.getGavId());
+            e.printStackTrace();
+            return Collections.emptyList();
         } finally {
             if (fileManager!=null)
                 fileManager.close();
