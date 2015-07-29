@@ -2,6 +2,7 @@ package org.jenkinsci.extension_indexer;
 
 import hudson.plugins.jira.soap.ConfluenceSoapService;
 import hudson.plugins.jira.soap.RemotePage;
+import hudson.util.VersionNumber;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.apache.commons.io.IOUtils;
@@ -57,6 +58,9 @@ public class ExtensionPointListGenerator {
 
     @Option(name="-sorcerer",usage="Generate sorcerer reports")
     public File sorcererDir;
+
+    @Option(name="-core",usage="Core version to use. If not set, default to newest")
+    public String coreVersion;
 
     @Argument
     public List<String> args = new ArrayList<String>();
@@ -158,7 +162,13 @@ public class ExtensionPointListGenerator {
         r.addRemoteRepository("public",
                 new URL("http://repo.jenkins-ci.org/public/"));
 
-        HudsonWar war = r.getHudsonWar().firstEntry().getValue();
+
+        HudsonWar war;
+        if (coreVersion == null) {
+            war = r.getHudsonWar().firstEntry().getValue();
+        } else {
+            war = r.getHudsonWar().get(new VersionNumber(coreVersion));
+        }
         final MavenArtifact core = war.getCoreArtifact();
         discover(core);
         modules.put(core, new Module(core,"http://github.com/jenkinsci/jenkins/","Jenkins Core") {
