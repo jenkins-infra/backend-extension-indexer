@@ -1,3 +1,5 @@
+{note}This page is generated periodically by the [Extension Indexer|https://github.com/jenkinsci/backend-extension-indexer]. Any edits will be overridden.{note}
+
 Jenkins defines extension points, which are interfaces or abstract classes that model an aspect of a build system.
 
 Those interfaces define contracts of what need to be implemented, and Jenkins allows plugins to contribute
