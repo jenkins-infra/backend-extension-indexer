@@ -92,7 +92,7 @@ public class ExtensionPointListGenerator {
             for (ExtensionSummary e : implementations) {
                 w.println("h3."+e.implementation);
                 w.println(getSynopsis(e));
-                w.println(e.confluenceDoc);
+                w.println(e.confluenceDoc == null ? "_This extension point has no JavaDoc documentation._" : e.confluenceDoc);
             }
             if (implementations.isEmpty())
                 w.println("(No known implementation)");
@@ -104,8 +104,12 @@ public class ExtensionPointListGenerator {
             final Module m = modules.get(e.artifact);
             if (m==null)
                 throw new IllegalStateException("Unable to find module for "+e.artifact);
-            return MessageFormat.format("*Defined in*: {0}  ([javadoc|{1}@javadoc])\n",
-                    m.getWikiLink(), e.extensionPoint);
+            if ("Jenkins Core".equals(m.displayName)) {
+                return MessageFormat.format("*Defined in*: {0}  ([javadoc|{1}@javadoc])\n",
+                        m.getWikiLink(), e.extensionPoint);
+            } else {
+                return MessageFormat.format("*Defined in*: {0}\n", m.getWikiLink());
+            }
         }
 
         public int compareTo(Object that) {
