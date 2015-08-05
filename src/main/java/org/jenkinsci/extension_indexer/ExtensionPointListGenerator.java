@@ -90,9 +90,9 @@ public class ExtensionPointListGenerator {
             w.println();
             w.println("{expand:title=Implementations}");
             for (ExtensionSummary e : implementations) {
-                w.println("h3."+e.implementation);
+                w.println("h3." + (e.implementation == null || e.implementation.equals("") ? "_Anonymous Class_" : e.implementation));
                 w.println(getSynopsis(e));
-                w.println(e.confluenceDoc == null ? "_This extension point has no JavaDoc documentation._" : e.confluenceDoc);
+                w.println(e.confluenceDoc == null ? "_This class has no Javadoc documentation._" : e.confluenceDoc);
             }
             if (implementations.isEmpty())
                 w.println("(No known implementation)");
