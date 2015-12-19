@@ -66,6 +66,7 @@ public class SourceAndLibs implements Closeable {
                 "dependency:copy-dependencies",
                 "-DincludeScope=compile",
                 "-DoutputDirectory=" + destDir.getAbsolutePath());
+        builder.environment().put("JAVA_HOME",System.getProperty("java.home"));
         builder.directory(pomDir);
         builder.redirectErrorStream(true);
         Process proc = builder.start();
