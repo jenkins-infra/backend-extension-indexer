@@ -234,6 +234,9 @@ public class ExtensionPointListGenerator {
                 if (!args.isEmpty()) {
                     if (!args.contains(p.artifactId))
                         continue;   // skip
+                } else if ("python-wrapper".equals(p.artifactId)) {
+                    // python-wrapper does not have extension points but just wrappers to help python plugins use extension points
+                    continue;   // skip them to remove noise
                 }
                 futures.add(svc.submit(new Runnable() {
                     public void run() {
