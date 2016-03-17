@@ -49,6 +49,7 @@ import java.util.concurrent.Future;
 public class ExtensionPointListGenerator {
     private final Map<String,Family> families = new HashMap<String,Family>();
     private final Map<MavenArtifact,Module> modules = new HashMap<MavenArtifact,Module>();
+    private final Map<String, List<Family>> pluginExtensions = new HashMap<String, List<Family>>();
 
     @Option(name="-wiki",usage="Generate the extension list index and write it out to the specified file.")
     public File wikiFile;
@@ -184,6 +185,8 @@ public class ExtensionPointListGenerator {
 
         processPlugins(r);
 
+        createPluginExtensions();
+
         if (wikiFile!=null) {
             JSONObject all = new JSONObject();
             for (Family f : families.values()) {
@@ -214,6 +217,28 @@ public class ExtensionPointListGenerator {
             uploadToWiki();
         }
     }
+
+    private void createPluginExtensions() throws IOException {
+        List<String> pluginData = new ArrayList<String>();
+        for (Module m : modules.values()) {
+            JSONObject plugin = m.toJSON();
+            JSONArray extensions = new JSONArray();
+            List<Family> fs = pluginExtensions.get(m.artifact.getGavId());
+            if(fs!= null){
+                for(Family f:fs){
+                    if(f != null && f.definition != null){
+                        extensions.add(f.definition.json);
+                    }
+                }
+            }
+
+            plugin.put("extensions", extensions);
+            pluginData.add(plugin.toString());
+        }
+
+        FileUtils.writeLines(new File("plugin-extensions-bq.json"), pluginData);
+    }
+
 
     private MavenRepositoryImpl createRepository() throws Exception {
         MavenRepositoryImpl r = new MavenRepositoryImpl();
@@ -314,6 +339,7 @@ public class ExtensionPointListGenerator {
             dir.mkdirs();
             sorcererGenerator.generate(a,dir);
         }
+
         if (wikiFile!=null) {
             for (Extension e : extractor.extract(a)) {
                 synchronized (families) {
@@ -325,6 +351,13 @@ public class ExtensionPointListGenerator {
                     Family f = families.get(key);
                     if (f==null)    families.put(key,f=new Family());
 
+                    if(pluginExtensions.get(a.getGavId()) == null){
+                        List<Family> fs = new ArrayList<Family>();
+                        fs.add(f);
+                        pluginExtensions.put(a.getGavId(), fs);
+                    }else{
+                        pluginExtensions.get(a.getGavId()).add(f);
+                    }
                     if (e.isDefinition()) {
                         assert f.definition==null;
                         f.definition = new ExtensionSummary(e);
