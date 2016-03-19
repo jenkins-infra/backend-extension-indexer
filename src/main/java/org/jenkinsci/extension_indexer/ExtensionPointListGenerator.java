@@ -223,7 +223,7 @@ public class ExtensionPointListGenerator {
             JSONObject all = new JSONObject();
             for (Family f : families.values()) {
                 if (f.definition==null)     continue;   // skip undefined extension points
-                JSONObject o = f.definition.json;
+                JSONObject o = JSONObject.fromObject(f.definition.json);
 
                 JSONArray use = new JSONArray();
                 for (ExtensionSummary impl : f.implementations)
