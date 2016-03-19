@@ -47,9 +47,14 @@ import java.util.concurrent.Future;
  */
 @SuppressWarnings("Since15")
 public class ExtensionPointListGenerator {
+    /**
+     * All known {@link Family}s keyed by {@link Family#definition}'s FQCN.
+     */
     private final Map<String,Family> families = new HashMap<String,Family>();
-    private final Map<MavenArtifact,Module> modules = new HashMap<MavenArtifact,Module>();
-    private final Map<String, List<Family>> pluginExtensions = new HashMap<String, List<Family>>();
+    /**
+     * All the modules we scanned keyed by its {@link Module#artifact}
+     */
+    private final Map<MavenArtifact,Module> modules = Collections.synchronizedMap(new HashMap<MavenArtifact,Module>());
 
     @Option(name="-wiki",usage="Generate the extension list index and write it out to the specified file.")
     public File wikiFile;
@@ -125,6 +130,10 @@ public class ExtensionPointListGenerator {
         final MavenArtifact artifact;
         final String url;
         final String displayName;
+        /**
+         * Extension point or extensions that are found inside this module.
+         */
+        final List<ExtensionSummary> extensions = new ArrayList<ExtensionSummary>();
 
         protected Module(MavenArtifact artifact, String url, String displayName) {
             this.artifact = artifact;
@@ -144,6 +153,15 @@ public class ExtensionPointListGenerator {
             o.put("displayName",displayName);
             return o;
         }
+
+        public String getGavId() {
+            return artifact.getGavId();
+        }
+    }
+
+    private Module addModule(Module m) {
+        modules.put(m.artifact,m);
+        return m;
     }
 
     public ExtensionPointListGenerator() throws IOException, ServiceException {
@@ -174,14 +192,12 @@ public class ExtensionPointListGenerator {
         } else {
             war = r.getHudsonWar().get(new VersionNumber(coreVersion));
         }
-        final MavenArtifact core = war.getCoreArtifact();
-        discover(core);
-        modules.put(core, new Module(core,"http://github.com/jenkinsci/jenkins/","Jenkins Core") {
+        discover(addModule(new Module(war.getCoreArtifact(),"http://github.com/jenkinsci/jenkins/","Jenkins Core") {
             @Override
             String getWikiLink() {
                 return "[Jenkins Core|Building Jenkins]";
             }
-        });
+        }));
 
         processPlugins(r);
 
@@ -223,13 +239,8 @@ public class ExtensionPointListGenerator {
         for (Module m : modules.values()) {
             JSONObject plugin = m.toJSON();
             JSONArray extensions = new JSONArray();
-            List<Family> fs = pluginExtensions.get(m.artifact.getGavId());
-            if(fs!= null){
-                for(Family f:fs){
-                    if(f != null && f.definition != null){
-                        extensions.add(f.definition.json);
-                    }
-                }
+            for (ExtensionSummary es : m.extensions) {
+                extensions.add(es.family.definition.json);
             }
 
             plugin.put("extensions", extensions);
@@ -249,7 +260,7 @@ public class ExtensionPointListGenerator {
     }
 
     /**
-     * Walks over the plugins, record {@link #modules} and call {@link #discover(MavenArtifact)}.
+     * Walks over the plugins, record {@link #modules} and call {@link #discover(Module)}.
      */
     private void processPlugins(MavenRepository r) throws Exception {
         ExecutorService svc = Executors.newFixedThreadPool(4);
@@ -268,16 +279,13 @@ public class ExtensionPointListGenerator {
                     public void run() {
                         try {
                             System.out.println(p.artifactId);
-                            synchronized (modules) {
-                                Plugin pi = new Plugin(p,cpl);
-                                modules.put(p.latest(), new Module(p.latest(),pi.getWiki(),pi.getTitle()) {
-                                    @Override
-                                    String getWikiLink() {
-                                        return '['+displayName+']';
-                                    }
-                                });
-                            }
-                            discover(p.latest());
+                            Plugin pi = new Plugin(p,cpl);
+                            discover(addModule(new Module(p.latest(), pi.getWiki(), pi.getTitle()) {
+                                @Override
+                                String getWikiLink() {
+                                    return '[' + displayName + ']';
+                                }
+                            }));
                         } catch (Exception e) {
                             System.err.println("Failed to process "+p.artifactId);
                             e.printStackTrace();
@@ -333,15 +341,15 @@ public class ExtensionPointListGenerator {
         service.storePage(token,p);
     }
 
-    private void discover(MavenArtifact a) throws IOException, InterruptedException {
+    private void discover(Module m) throws IOException, InterruptedException {
         if (sorcererDir!=null) {
-            final File dir = new File(sorcererDir, a.artifact.artifactId);
+            final File dir = new File(sorcererDir, m.artifact.artifact.artifactId);
             dir.mkdirs();
-            sorcererGenerator.generate(a,dir);
+            sorcererGenerator.generate(m.artifact,dir);
         }
 
         if (wikiFile!=null) {
-            for (Extension e : extractor.extract(a)) {
+            for (Extension e : extractor.extract(m.artifact)) {
                 synchronized (families) {
                     System.out.printf("Found %s as %s\n",
                             e.implementation.getQualifiedName(),
@@ -351,18 +359,13 @@ public class ExtensionPointListGenerator {
                     Family f = families.get(key);
                     if (f==null)    families.put(key,f=new Family());
 
-                    if(pluginExtensions.get(a.getGavId()) == null){
-                        List<Family> fs = new ArrayList<Family>();
-                        fs.add(f);
-                        pluginExtensions.put(a.getGavId(), fs);
-                    }else{
-                        pluginExtensions.get(a.getGavId()).add(f);
-                    }
+                    ExtensionSummary es = new ExtensionSummary(f,e);
+                    m.extensions.add(es);
                     if (e.isDefinition()) {
                         assert f.definition==null;
-                        f.definition = new ExtensionSummary(e);
+                        f.definition = es;
                     } else {
-                        f.implementations.add(new ExtensionSummary(e));
+                        f.implementations.add(es);
                     }
                 }
             }

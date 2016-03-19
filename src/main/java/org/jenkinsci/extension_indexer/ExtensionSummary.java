@@ -1,6 +1,7 @@
 package org.jenkinsci.extension_indexer;
 
 import net.sf.json.JSONObject;
+import org.jenkinsci.extension_indexer.ExtensionPointListGenerator.Family;
 import org.jvnet.hudson.update_center.MavenArtifact;
 
 /**
@@ -23,7 +24,20 @@ public class ExtensionSummary {
 
     public final JSONObject json;
 
-    public ExtensionSummary(Extension e) {
+    /**
+     * True for a definition of extension point, false for an implementation of extension point.
+     */
+    public final boolean isDefinition;
+
+    /**
+     * Family that this extension belongs to. Eithe {@link Family#definition} is 'this'
+     * or {@link Family#implementations} includes 'this'
+     */
+    public final Family family;
+
+    public ExtensionSummary(Family f, Extension e) {
+        this.family = f;
+        this.isDefinition = e.isDefinition();
         this.artifact = e.artifact;
         this.extensionPoint = e.extensionPoint.getQualifiedName().toString();
         this.implementation = e.implementation!=null ? e.implementation.getQualifiedName().toString() : null;
