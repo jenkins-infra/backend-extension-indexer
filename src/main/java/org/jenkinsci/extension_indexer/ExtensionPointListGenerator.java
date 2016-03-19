@@ -153,10 +153,6 @@ public class ExtensionPointListGenerator {
             o.put("displayName",displayName);
             return o;
         }
-
-        public String getGavId() {
-            return artifact.getGavId();
-        }
     }
 
     private Module addModule(Module m) {
