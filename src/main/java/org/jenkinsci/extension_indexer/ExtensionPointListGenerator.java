@@ -168,7 +168,8 @@ public class ExtensionPointListGenerator {
 
             JSONArray uses = new JSONArray();
             for (ExtensionSummary es : defs) {
-                uses.add(es);
+                if (es==null)   continue;
+                uses.add(es.json);
             }
             o.put("uses", uses);    // extension points that this module consumes
 
