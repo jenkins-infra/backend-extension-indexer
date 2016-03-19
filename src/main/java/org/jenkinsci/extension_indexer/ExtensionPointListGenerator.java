@@ -151,6 +151,24 @@ public class ExtensionPointListGenerator {
             o.put("gav",artifact.getGavId());
             o.put("url",url);
             o.put("displayName",displayName);
+
+            Set<ExtensionSummary> defs = new HashSet<ExtensionSummary>();
+
+            JSONArray extensions = new JSONArray();
+            JSONArray extensionPoints = new JSONArray();
+            for (ExtensionSummary es : this.extensions) {
+                (es.isDefinition ? extensionPoints : extensions).add(es.json);
+                defs.add(es.family.definition);
+            }
+            o.put("extensions",extensions);     // extensions defined in this module
+            o.put("extensionPoints",extensionPoints);   // extension points defined in this module
+
+            JSONArray uses = new JSONArray();
+            for (ExtensionSummary es : defs) {
+                uses.add(es);
+            }
+            o.put("uses", uses);    // extension points that this module consumes
+
             return o;
         }
     }
@@ -197,8 +215,6 @@ public class ExtensionPointListGenerator {
 
         processPlugins(r);
 
-        createPluginExtensions();
-
         if (wikiFile!=null) {
             JSONObject all = new JSONObject();
             for (Family f : families.values()) {
@@ -229,23 +245,6 @@ public class ExtensionPointListGenerator {
             uploadToWiki();
         }
     }
-
-    private void createPluginExtensions() throws IOException {
-        List<String> pluginData = new ArrayList<String>();
-        for (Module m : modules.values()) {
-            JSONObject plugin = m.toJSON();
-            JSONArray extensions = new JSONArray();
-            for (ExtensionSummary es : m.extensions) {
-                extensions.add(es.family.definition.json);
-            }
-
-            plugin.put("extensions", extensions);
-            pluginData.add(plugin.toString());
-        }
-
-        FileUtils.writeLines(new File("plugin-extensions-bq.json"), pluginData);
-    }
-
 
     private MavenRepositoryImpl createRepository() throws Exception {
         MavenRepositoryImpl r = new MavenRepositoryImpl();
