@@ -11,7 +11,8 @@ import org.jvnet.hudson.update_center.MavenArtifact;
 
 import javax.lang.model.element.TypeElement;
 import java.io.File;
-import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -52,6 +53,8 @@ public final class Extension {
      */
     public final TreePath implPath;
 
+    private final List<String> jellyFiles = new ArrayList<String>();
+
     /**
      * {@link Trees} object for {@link #javac}
      */
@@ -84,6 +87,13 @@ public final class Extension {
     }
 
     /**
+     * Returns true if there are jelly files
+     */
+    public boolean isUiExtension(){
+        return jellyFiles.size() > 0;
+    }
+
+    /**
      * Returns the {@link ClassTree} representation of {@link #implementation}.
      */
     public ClassTree getClassTree() {
@@ -105,6 +115,26 @@ public final class Extension {
         String name = new File(getCompilationUnit().getSourceFile().getName()).getName();
         return pkg + name;
     }
+
+    public void addJellyFiles(List<File> files){
+        if(implementation.getQualifiedName().toString().isEmpty()){
+            return;
+        }
+        for(File f: files){
+            String fqName = f.getAbsolutePath();
+            int loc = fqName.indexOf("src");
+
+            if(loc>0) {
+                String s = fqName.substring(loc+4);
+                if(!jellyFiles.contains(s)){
+                    jellyFiles.add(s);
+                }
+            }else{
+                //We can't get here as jelly files are always stored inside src root
+            }
+        }
+    }
+
 
     /**
      * Gets the line number in the source file where this implementation was defined.
@@ -171,6 +201,8 @@ public final class Extension {
         i.put("confluenceDoc", getConfluenceDoc());
         i.put("sourceFile",getSourceFile());
         i.put("lineNumber",getLineNumber());
+        i.put("uiExtension", jellyFiles.size() > 1);
+        i.put("jellyFiles",jellyFiles);
         return i;
     }
 

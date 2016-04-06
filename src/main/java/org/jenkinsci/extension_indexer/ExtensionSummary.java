@@ -26,6 +26,8 @@ public class ExtensionSummary {
 
     public final JSONObject json;
 
+    public final boolean isUiExtension;
+
     /**
      * True for a definition of extension point, false for an implementation of extension point.
      */
@@ -45,6 +47,7 @@ public class ExtensionSummary {
         this.action = e.getActionName();
         this.implementation = e.implementation!=null ? e.implementation.getQualifiedName().toString() : null;
         this.confluenceDoc = e.getConfluenceDoc();
+        this.isUiExtension = e.isUiExtension();
         this.json = e.toJSON();
     }
 }

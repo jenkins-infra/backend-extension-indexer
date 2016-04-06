@@ -8,6 +8,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -37,6 +38,23 @@ public class SourceAndLibs implements Closeable {
 
     public List<File> getSourceFiles() {
         return FileUtils.getFileIterator(srcDir, "java");
+    }
+
+    public List<File> getJellyFiles() {
+        return FileUtils.getFileIterator(srcDir, "jelly");
+    }
+
+    // give list of jelly files in given packages
+    public List<File> getJellyFiles(String fqClassName){
+        List<File> jellyFiles = new ArrayList<File>();
+        List<File> files = FileUtils.getFileIterator(srcDir, "jelly");
+        String fsFqClassName = fqClassName.replace('.', '/');
+        for(File f: files){
+            if(f.getAbsolutePath().startsWith(srcDir.getAbsolutePath()+"/"+fsFqClassName)){
+                jellyFiles.add(f);
+            }
+        }
+        return jellyFiles;
     }
 
     public static SourceAndLibs create(MavenArtifact artifact) throws IOException, InterruptedException {

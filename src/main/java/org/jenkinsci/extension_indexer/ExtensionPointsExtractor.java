@@ -50,7 +50,7 @@ public class ExtensionPointsExtractor {
         return extract(artifact,SourceAndLibs.create(artifact));
     }
 
-    public List<Extension> extract(final MavenArtifact artifact, SourceAndLibs sal) throws IOException, InterruptedException {
+    public List<Extension> extract(final MavenArtifact artifact, final SourceAndLibs sal) throws IOException, InterruptedException {
         this.artifact = artifact;
         this.sal = sal;
 
@@ -107,7 +107,15 @@ public class ExtensionPointsExtractor {
                         if (types.asElement(i).equals(action))
                             act = e;
 
-                        r.add(new Extension(artifact, javac, trees, root, pathToRoot, ext, act));
+                        Extension extension = new Extension(artifact, javac, trees, root, pathToRoot, ext, act);
+                        if(ext != null) {
+                            extension.addJellyFiles(sal.getJellyFiles(ext.getQualifiedName().toString()));
+                        }
+                        if(act != null) {
+                            extension.addJellyFiles(sal.getJellyFiles(act.getQualifiedName().toString()));
+                        }
+                        extension.addJellyFiles(sal.getJellyFiles(root.getQualifiedName().toString()));
+                        r.add(extension);
                         checkIfExtension(pathToRoot,root,(TypeElement)types.asElement(i));
                     }
                     TypeMirror s = e.getSuperclass();
