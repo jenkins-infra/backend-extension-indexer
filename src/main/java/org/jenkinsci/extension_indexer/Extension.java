@@ -44,6 +44,9 @@ public final class Extension {
      */
     public final TypeElement extensionPoint;
 
+    public final TypeElement action;
+
+
     /**
      * {@link TreePath} that leads to {@link #implementation}
      */
@@ -54,13 +57,14 @@ public final class Extension {
      */
     public final Trees trees;
 
-    Extension(MavenArtifact artifact, JavacTask javac, Trees trees, TypeElement implementation, TreePath implPath, TypeElement extensionPoint) {
+    Extension(MavenArtifact artifact, JavacTask javac, Trees trees, TypeElement implementation, TreePath implPath, TypeElement extensionPoint,TypeElement action) {
         this.artifact = artifact;
         this.javac = javac;
         this.implementation = implementation;
         this.implPath = implPath;
         this.extensionPoint = extensionPoint;
         this.trees = trees;
+        this.action = action;
     }
 
     /**
@@ -68,7 +72,15 @@ public final class Extension {
      * (as opposed to an implementation of a defined extension point.)
      */
     public boolean isDefinition() {
-        return implementation.equals(extensionPoint);
+        return extensionPoint!= null && implementation.equals(extensionPoint);
+    }
+
+    public String getExtensionPointName(){
+        return extensionPoint != null ? extensionPoint.getQualifiedName().toString() : null;
+    }
+
+    public String getActionName(){
+        return action != null ? action.getQualifiedName().toString() : null;
     }
 
     /**
@@ -149,8 +161,11 @@ public final class Extension {
     public JSONObject toJSON() {
         JSONObject i = new JSONObject();
         i.put("className",implementation.getQualifiedName().toString());
-        if (!isDefinition())
+        if (!isDefinition() && extensionPoint != null)
             i.put("extensionPoint",extensionPoint.getQualifiedName().toString());
+        if(action != null){
+            i.put("action",action.getQualifiedName().toString());
+        }
         i.put("artifact",artifact.getGavId());
         i.put("javadoc",getJavadoc());
         i.put("confluenceDoc", getConfluenceDoc());

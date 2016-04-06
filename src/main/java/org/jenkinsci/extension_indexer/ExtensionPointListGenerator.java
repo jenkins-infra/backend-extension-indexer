@@ -159,12 +159,22 @@ public class ExtensionPointListGenerator {
 
             JSONArray extensions = new JSONArray();
             JSONArray extensionPoints = new JSONArray();
+            JSONArray actions = new JSONArray();
             for (ExtensionSummary es : this.extensions) {
-                (es.isDefinition ? extensionPoints : extensions).add(es.json);
+                if(es.isDefinition){
+                    extensionPoints.add(es.json);
+                }
+                if(es.extensionPoint !=null){
+                    extensions.add(es.json);
+                }
                 defs.add(es.family.definition);
+                if(es.action != null){
+                    actions.add(es.json);
+                }
             }
             o.put("extensions",extensions);     // extensions defined in this module
             o.put("extensionPoints",extensionPoints);   // extension points defined in this module
+            o.put("actions", actions); // actions implemented in this module
 
             JSONArray uses = new JSONArray();
             for (ExtensionSummary es : defs) {
@@ -354,9 +364,13 @@ public class ExtensionPointListGenerator {
                 synchronized (families) {
                     System.out.printf("Found %s as %s\n",
                             e.implementation.getQualifiedName(),
-                            e.extensionPoint.getQualifiedName());
+                            e.getExtensionPointName());
 
-                    String key = e.extensionPoint.getQualifiedName().toString();
+                    String key = e.getExtensionPointName();
+                    if(key == null) {
+                        key = e.getActionName();
+                    }
+
                     Family f = families.get(key);
                     if (f==null)    families.put(key,f=new Family());
 

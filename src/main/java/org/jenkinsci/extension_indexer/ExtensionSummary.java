@@ -18,6 +18,8 @@ public class ExtensionSummary {
 
     public final String extensionPoint;
 
+    public final String action;
+
     public final String implementation;
 
     public final String confluenceDoc;
@@ -39,7 +41,8 @@ public class ExtensionSummary {
         this.family = f;
         this.isDefinition = e.isDefinition();
         this.artifact = e.artifact;
-        this.extensionPoint = e.extensionPoint.getQualifiedName().toString();
+        this.extensionPoint = e.getExtensionPointName();
+        this.action = e.getActionName();
         this.implementation = e.implementation!=null ? e.implementation.getQualifiedName().toString() : null;
         this.confluenceDoc = e.getConfluenceDoc();
         this.json = e.toJSON();

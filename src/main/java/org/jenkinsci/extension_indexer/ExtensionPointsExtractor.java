@@ -85,7 +85,7 @@ public class ExtensionPointsExtractor {
             // discover all compiled types
             TreePathScanner<?,?> classScanner = new TreePathScanner<Void,Void>() {
                 final TypeElement extensionPoint = elements.getTypeElement("hudson.ExtensionPoint");
-
+                final TypeElement action = elements.getTypeElement("hudson.model.Action");
                 public Void visitClass(ClassTree ct, Void _) {
                     TreePath path = getCurrentPath();
                     TypeElement e = (TypeElement) trees.getElement(path);
@@ -99,8 +99,15 @@ public class ExtensionPointsExtractor {
                     if (e==null)    return; // if the compilation fails, this can happen
 
                     for (TypeMirror i : e.getInterfaces()) {
+                        TypeElement ext=null;
+                        TypeElement act=null;
                         if (types.asElement(i).equals(extensionPoint))
-                            r.add(new Extension(artifact, javac, trees, root, pathToRoot, e));
+                            ext = e;
+
+                        if (types.asElement(i).equals(action))
+                            act = e;
+
+                        r.add(new Extension(artifact, javac, trees, root, pathToRoot, ext, act));
                         checkIfExtension(pathToRoot,root,(TypeElement)types.asElement(i));
                     }
                     TypeMirror s = e.getSuperclass();
