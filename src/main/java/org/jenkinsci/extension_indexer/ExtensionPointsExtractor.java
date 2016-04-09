@@ -8,7 +8,6 @@ import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.file.ZipFileIndexCache;
-import org.apache.commons.io.IOUtils;
 import org.jvnet.hudson.update_center.MavenArtifact;
 
 import javax.lang.model.element.TypeElement;
@@ -22,15 +21,16 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Finds the defined extension points in a HPI.
@@ -46,11 +46,11 @@ public class ExtensionPointsExtractor {
     private MavenArtifact artifact;
     private SourceAndLibs sal;
 
-    public List<Extension> extract(MavenArtifact artifact) throws IOException, InterruptedException {
+    public List<BaseClass> extract(MavenArtifact artifact) throws IOException, InterruptedException {
         return extract(artifact,SourceAndLibs.create(artifact));
     }
 
-    public List<Extension> extract(final MavenArtifact artifact, final SourceAndLibs sal) throws IOException, InterruptedException {
+    public List<BaseClass> extract(final MavenArtifact artifact, final SourceAndLibs sal) throws IOException, InterruptedException {
         this.artifact = artifact;
         this.sal = sal;
 
@@ -80,7 +80,9 @@ public class ExtensionPointsExtractor {
             Iterable<? extends CompilationUnitTree> parsed = javac.parse();
             javac.analyze();
 
-            final List<Extension> r = new ArrayList<Extension>();
+            final List<BaseClass> r = new ArrayList<BaseClass>();
+
+            final Map<String,Map<String,String>> viewMap = new HashMap<String, Map<String,String>>();
 
             // discover all compiled types
             TreePathScanner<?,?> classScanner = new TreePathScanner<Void,Void>() {
@@ -98,24 +100,24 @@ public class ExtensionPointsExtractor {
                 private void checkIfExtension(TreePath pathToRoot, TypeElement root, TypeElement e) {
                     if (e==null)    return; // if the compilation fails, this can happen
 
+                    Map<String, String> view = viewMap.get(root.getQualifiedName().toString());
+                    if (view == null){
+                        view = new HashMap<String, String>();
+                        viewMap.put(root.getQualifiedName().toString(), view);
+                        populateViewMap(sal.getJellyFiles(root.getQualifiedName().toString()), view);
+                    }
+                    if(types.isSubtype(e.asType(), action.asType())){
+                        Action a = new Action(artifact, javac, trees, root, pathToRoot, e);
+                        populateViewMap(sal.getJellyFiles(e.getQualifiedName().toString()), view);
+                        r.add(a);
+                    }
+
                     for (TypeMirror i : e.getInterfaces()) {
-                        TypeElement ext=null;
-                        TypeElement act=null;
-                        if (types.asElement(i).equals(extensionPoint))
-                            ext = e;
-
-                        if (types.asElement(i).equals(action))
-                            act = e;
-
-                        Extension extension = new Extension(artifact, javac, trees, root, pathToRoot, ext, act);
-                        if(ext != null) {
-                            extension.addJellyFiles(sal.getJellyFiles(ext.getQualifiedName().toString()));
+                        if (types.asElement(i).equals(extensionPoint)){
+                            Extension ext = new Extension(artifact, javac, trees, root, pathToRoot, e);
+                            populateViewMap(sal.getJellyFiles(e.getQualifiedName().toString()), view);
+                            r.add(ext);
                         }
-                        if(act != null) {
-                            extension.addJellyFiles(sal.getJellyFiles(act.getQualifiedName().toString()));
-                        }
-                        extension.addJellyFiles(sal.getJellyFiles(root.getQualifiedName().toString()));
-                        r.add(extension);
                         checkIfExtension(pathToRoot,root,(TypeElement)types.asElement(i));
                     }
                     TypeMirror s = e.getSuperclass();
@@ -127,6 +129,10 @@ public class ExtensionPointsExtractor {
             for( CompilationUnitTree u : parsed )
                 classScanner.scan(u,null);
 
+
+            for(BaseClass baseClass: r){
+                baseClass.addViews(viewMap.get(baseClass.getImplementationName()));
+            }
             return r;
         } catch (AssertionError e) {
             // javac has thrown this exception for some input
@@ -138,6 +144,28 @@ public class ExtensionPointsExtractor {
                 fileManager.close();
             sal.close();
             ZipFileIndexCache.getSharedInstance().clearCache();
+        }
+    }
+
+    private void populateViewMap(List<File> files, Map<String,String> views){
+        for(File f: files) {
+            String fqName = f.getAbsolutePath();
+            int loc = fqName.indexOf("src");
+            if (loc > 0) {
+                String path = fqName.substring(loc + 4);
+                String[] a = path.split("/");
+                String name = a[a.length - 1];
+                int i = name.lastIndexOf(".");
+                if(i > 0){
+                    name = name.substring(0,i);
+                }
+
+                if (views.get(name) == null) {
+                    views.put(name, path);
+                }
+            } else {
+                //We can't get here as jelly files are always stored inside src root
+            }
         }
     }
 

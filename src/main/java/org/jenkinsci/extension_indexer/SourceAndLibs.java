@@ -47,7 +47,7 @@ public class SourceAndLibs implements Closeable {
     // give list of jelly files in given packages
     public List<File> getJellyFiles(String fqClassName){
         List<File> jellyFiles = new ArrayList<File>();
-        List<File> files = FileUtils.getFileIterator(srcDir, "jelly");
+        List<File> files = FileUtils.getFileIterator(srcDir, "jelly", "groovy");
         String fsFqClassName = fqClassName.replace('.', '/');
         for(File f: files){
             if(f.getAbsolutePath().startsWith(srcDir.getAbsolutePath()+"/"+fsFqClassName)){

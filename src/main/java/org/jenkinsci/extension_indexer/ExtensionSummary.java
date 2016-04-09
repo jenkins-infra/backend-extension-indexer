@@ -4,6 +4,9 @@ import net.sf.json.JSONObject;
 import org.jenkinsci.extension_indexer.ExtensionPointListGenerator.Family;
 import org.jvnet.hudson.update_center.MavenArtifact;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * Captures key details of {@link Extension} but without keeping much of the work in memory.
  *
@@ -18,15 +21,15 @@ public class ExtensionSummary {
 
     public final String extensionPoint;
 
-    public final String action;
-
     public final String implementation;
 
     public final String confluenceDoc;
 
     public final JSONObject json;
 
-    public final boolean isUiExtension;
+    public final boolean hasView;
+
+    public final Map<String,String> views;
 
     /**
      * True for a definition of extension point, false for an implementation of extension point.
@@ -43,11 +46,16 @@ public class ExtensionSummary {
         this.family = f;
         this.isDefinition = e.isDefinition();
         this.artifact = e.artifact;
-        this.extensionPoint = e.getExtensionPointName();
-        this.action = e.getActionName();
+        this.extensionPoint = e.getBaseTypeName();
         this.implementation = e.implementation!=null ? e.implementation.getQualifiedName().toString() : null;
         this.confluenceDoc = e.getConfluenceDoc();
-        this.isUiExtension = e.isUiExtension();
+        this.hasView = e.hasView();
+        this.views = e.views;
         this.json = e.toJSON();
+    }
+
+    public static void main(String[] args) {
+        double x = 0.7450476417541504;
+        System.out.println(Double.parseDouble(String.format("%.2f", x)));
     }
 }

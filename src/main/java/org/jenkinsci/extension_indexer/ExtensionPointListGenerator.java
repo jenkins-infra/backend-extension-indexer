@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Command-line tool to list up extension points and their implementations into a JSON file.
@@ -137,6 +138,7 @@ public class ExtensionPointListGenerator {
          * Extension point or extensions that are found inside this module.
          */
         final List<ExtensionSummary> extensions = new ArrayList<ExtensionSummary>();
+        final List<Action> actions = new ArrayList<Action>();
 
         protected Module(MavenArtifact artifact, String url, String displayName) {
             this.artifact = artifact;
@@ -158,23 +160,33 @@ public class ExtensionPointListGenerator {
             Set<ExtensionSummary> defs = new HashSet<ExtensionSummary>();
 
             JSONArray extensions = new JSONArray();
-            JSONArray extensionPoints = new JSONArray();
             JSONArray actions = new JSONArray();
+            JSONArray extensionPoints = new JSONArray();
+            int viewCount=0;
             for (ExtensionSummary es : this.extensions) {
-                if(es.isDefinition){
-                    extensionPoints.add(es.json);
-                }
-                if(es.extensionPoint !=null){
-                    extensions.add(es.json);
-                }
+                (es.isDefinition ? extensionPoints : extensions).add(es.json);
                 defs.add(es.family.definition);
-                if(es.action != null){
-                    actions.add(es.json);
+
+                if(es.hasView){
+                    viewCount++;
                 }
             }
+
+            for(Action action:this.actions){
+                JSONObject jsonObject = action.toJSON();
+                actions.add(jsonObject);
+                if(action.hasView()){
+                    viewCount++;
+                }
+            }
+
+            double viewScore = (double)viewCount/(extensions.size()+actions.size());
+
+
             o.put("extensions",extensions);     // extensions defined in this module
             o.put("extensionPoints",extensionPoints);   // extension points defined in this module
             o.put("actions", actions); // actions implemented in this module
+            o.put("viewScore", Double.parseDouble(String.format("%.2f", viewScore)));
 
             JSONArray uses = new JSONArray();
             for (ExtensionSummary es : defs) {
@@ -277,6 +289,7 @@ public class ExtensionPointListGenerator {
         ExecutorService svc = Executors.newFixedThreadPool(4);
         try {
             Set<Future> futures = new HashSet<Future>();
+            AtomicInteger i = new AtomicInteger();
             for (final PluginHistory p : new ArrayList<PluginHistory>(r.listHudsonPlugins())/*.subList(0,200)*/) {
                 if (!args.isEmpty()) {
                     if (!args.contains(p.artifactId))
@@ -286,6 +299,7 @@ public class ExtensionPointListGenerator {
                     // see https://issues.jenkins-ci.org/browse/INFRA-516
                     continue;   // skip them to remove noise
                 }
+                i.incrementAndGet();
                 futures.add(svc.submit(new Runnable() {
                     public void run() {
                         try {
@@ -303,6 +317,9 @@ public class ExtensionPointListGenerator {
                         }
                     }
                 }));
+                if(i.get() >= 2){
+                    break;
+                }
             }
             for (Future f : futures) {
                 f.get();
@@ -360,27 +377,27 @@ public class ExtensionPointListGenerator {
         }
 
         if (wikiFile!=null || jsonFile!=null) {
-            for (Extension e : extractor.extract(m.artifact)) {
+            for (BaseClass e : extractor.extract(m.artifact)) {
                 synchronized (families) {
                     System.out.printf("Found %s as %s\n",
                             e.implementation.getQualifiedName(),
-                            e.getExtensionPointName());
+                            e.getBaseTypeName());
 
-                    String key = e.getExtensionPointName();
-                    if(key == null) {
-                        key = e.getActionName();
-                    }
-
+                    String key = e.getBaseTypeName();
                     Family f = families.get(key);
                     if (f==null)    families.put(key,f=new Family());
 
-                    ExtensionSummary es = new ExtensionSummary(f,e);
-                    m.extensions.add(es);
-                    if (e.isDefinition()) {
-                        assert f.definition==null;
-                        f.definition = es;
-                    } else {
-                        f.implementations.add(es);
+                    if(e instanceof Extension) {
+                        ExtensionSummary es = new ExtensionSummary(f, (Extension) e);
+                        m.extensions.add(es);
+                        if (((Extension) e).isDefinition()) {
+                            assert f.definition == null;
+                            f.definition = es;
+                        } else {
+                            f.implementations.add(es);
+                        }
+                    }else if(e instanceof Action){
+                        m.actions.add((Action) e);
                     }
                 }
             }
