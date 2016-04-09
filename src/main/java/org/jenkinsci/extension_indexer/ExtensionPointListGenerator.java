@@ -39,7 +39,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Command-line tool to list up extension points and their implementations into a JSON file.
@@ -289,7 +288,6 @@ public class ExtensionPointListGenerator {
         ExecutorService svc = Executors.newFixedThreadPool(4);
         try {
             Set<Future> futures = new HashSet<Future>();
-            AtomicInteger i = new AtomicInteger();
             for (final PluginHistory p : new ArrayList<PluginHistory>(r.listHudsonPlugins())/*.subList(0,200)*/) {
                 if (!args.isEmpty()) {
                     if (!args.contains(p.artifactId))
@@ -299,7 +297,6 @@ public class ExtensionPointListGenerator {
                     // see https://issues.jenkins-ci.org/browse/INFRA-516
                     continue;   // skip them to remove noise
                 }
-                i.incrementAndGet();
                 futures.add(svc.submit(new Runnable() {
                     public void run() {
                         try {
@@ -317,9 +314,6 @@ public class ExtensionPointListGenerator {
                         }
                     }
                 }));
-                if(i.get() >= 2){
-                    break;
-                }
             }
             for (Future f : futures) {
                 f.get();

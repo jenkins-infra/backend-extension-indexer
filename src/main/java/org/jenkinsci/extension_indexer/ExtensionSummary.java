@@ -53,9 +53,4 @@ public class ExtensionSummary {
         this.views = e.views;
         this.json = e.toJSON();
     }
-
-    public static void main(String[] args) {
-        double x = 0.7450476417541504;
-        System.out.println(Double.parseDouble(String.format("%.2f", x)));
-    }
 }
