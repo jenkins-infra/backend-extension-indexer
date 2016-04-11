@@ -70,6 +70,12 @@ public class ExtensionPointListGenerator {
 
     @Option(name="-core",usage="Core version to use. If not set, default to newest")
     public String coreVersion;
+    
+    @Option(name="-pipeline",required=false,usage="Create the pipeline documentation for all plugins.")
+    public String pipeline;
+    
+    @Option(name="-folderLoc",usage="Root directory of the plugin folder used in Pipeline Documentation.")
+    public String folderLoc;
 
     @Argument
     public List<String> args = new ArrayList<String>();
@@ -194,8 +200,8 @@ public class ExtensionPointListGenerator {
     }
 
     public void run() throws Exception {
-        if (wikiFile==null && sorcererDir==null && jsonFile==null)
-            throw new IllegalStateException("Nothing to do. Either -wiki, -json, or -sorcerer is needed");
+        if (wikiFile==null && sorcererDir==null && jsonFile==null && pipeline==null)
+            throw new IllegalStateException("Nothing to do. Either -wiki, -json, -sorcerer, or -pipeline is needed");
         if (wikiPage!=null && wikiFile==null)
             throw new IllegalStateException("Can't upload the page without generating a Wiki file.");
 
@@ -203,6 +209,11 @@ public class ExtensionPointListGenerator {
         r.addRemoteRepository("public",
                 new URL("http://repo.jenkins-ci.org/public/"));
 
+        //process pipeline
+        if(pipeline!=null){
+            savePlugins(r);
+            return;
+        }
 
         HudsonWar war;
         if (coreVersion == null) {
@@ -258,6 +269,46 @@ public class ExtensionPointListGenerator {
                 new File("updates.jenkins-ci.org"),
                 new URL("http://maven.glassfish.org/content/groups/public/"));
         return r;
+    }
+    
+    private void savePlugins(MavenRepository r) throws Exception {
+        final HpiAssembler hpia;
+        if(folderLoc==null){
+            hpia = new HpiAssembler();
+        } else {
+            hpia = new HpiAssembler(folderLoc);
+        }
+        ExecutorService svc = Executors.newFixedThreadPool(4);
+        try {
+            Set<Future> futures = new HashSet<Future>();
+            for (final PluginHistory p : new ArrayList<PluginHistory>(r.listHudsonPlugins())/*.subList(0,200)*/) {
+                if (!args.isEmpty()) {
+                    if (!args.contains(p.artifactId))
+                        continue;   // skip
+                } else if ("python-wrapper".equals(p.artifactId)) {
+                    continue;   // skip them to remove noise
+                }
+                futures.add(svc.submit(new Runnable() {
+                    public void run() {
+                        try {
+                            System.out.println(p.artifactId);
+                            hpia.create(p.latest());
+                        } catch (Exception e) {
+                            System.err.println("Failed to process "+p.artifactId);
+                            e.printStackTrace();
+                        }
+                    }
+                }));
+            }
+            System.out.println("size of futures: " + futures.size());
+            for (Future f : futures) {
+                f.get();
+            }
+
+        } finally {
+            hpia.close();
+            svc.shutdown();
+        }
     }
 
     /**
