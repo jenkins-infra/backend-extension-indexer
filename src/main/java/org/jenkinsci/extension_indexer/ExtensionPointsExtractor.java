@@ -88,15 +88,32 @@ public class ExtensionPointsExtractor {
             TreePathScanner<?,?> classScanner = new TreePathScanner<Void,Void>() {
                 final TypeElement extensionPoint = elements.getTypeElement("hudson.ExtensionPoint");
                 final TypeElement action = elements.getTypeElement("hudson.model.Action");
+
                 public Void visitClass(ClassTree ct, Void _) {
                     TreePath path = getCurrentPath();
                     TypeElement e = (TypeElement) trees.getElement(path);
-                    if(e!=null)
-                        checkIfExtension(path,e,e);
-
+                    if (e != null) {
+                        checkIfExtension(path, e, e);
+                        checkIfAction(path, e);
+                    }
                     return super.visitClass(ct, _);
                 }
 
+                /**
+                 * If the class is an action, create a record for it.
+                 */
+                private void checkIfAction(TreePath path, TypeElement e) {
+                    if (types.isSubtype(e.asType(), action.asType())) {
+                        Action a = new Action(artifact, javac, trees, e, path);
+                        populateViewMap(sal.getJellyFiles(e.getQualifiedName().toString()), view);
+                        r.add(a);
+                    }
+                }
+
+                /**
+                 * Recursively ascend the type hierarchy toward {@link Object} and find all extension points
+                 * {@code root} implement.
+                 */
                 private void checkIfExtension(TreePath pathToRoot, TypeElement root, TypeElement e) {
                     if (e==null)    return; // if the compilation fails, this can happen
 
@@ -105,11 +122,6 @@ public class ExtensionPointsExtractor {
                         view = new HashMap<String, String>();
                         viewMap.put(root.getQualifiedName().toString(), view);
                         populateViewMap(sal.getJellyFiles(root.getQualifiedName().toString()), view);
-                    }
-                    if(types.isSubtype(e.asType(), action.asType())){
-                        Action a = new Action(artifact, javac, trees, root, pathToRoot);
-                        populateViewMap(sal.getJellyFiles(e.getQualifiedName().toString()), view);
-                        r.add(a);
                     }
 
                     for (TypeMirror i : e.getInterfaces()) {
