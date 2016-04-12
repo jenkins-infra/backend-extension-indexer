@@ -8,7 +8,7 @@ import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.file.ZipFileIndexCache;
-import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.jvnet.hudson.update_center.MavenArtifact;
 
 import javax.lang.model.element.TypeElement;
@@ -22,15 +22,16 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Finds the defined extension points in a HPI.
@@ -46,11 +47,11 @@ public class ExtensionPointsExtractor {
     private MavenArtifact artifact;
     private SourceAndLibs sal;
 
-    public List<Extension> extract(MavenArtifact artifact) throws IOException, InterruptedException {
+    public List<ClassOfInterest> extract(MavenArtifact artifact) throws IOException, InterruptedException {
         return extract(artifact,SourceAndLibs.create(artifact));
     }
 
-    public List<Extension> extract(final MavenArtifact artifact, SourceAndLibs sal) throws IOException, InterruptedException {
+    public List<ClassOfInterest> extract(final MavenArtifact artifact, final SourceAndLibs sal) throws IOException, InterruptedException {
         this.artifact = artifact;
         this.sal = sal;
 
@@ -80,32 +81,68 @@ public class ExtensionPointsExtractor {
             Iterable<? extends CompilationUnitTree> parsed = javac.parse();
             javac.analyze();
 
-            final List<Extension> r = new ArrayList<Extension>();
+            final List<ClassOfInterest> r = new ArrayList<ClassOfInterest>();
 
             // discover all compiled types
             TreePathScanner<?,?> classScanner = new TreePathScanner<Void,Void>() {
                 final TypeElement extensionPoint = elements.getTypeElement("hudson.ExtensionPoint");
+                final TypeElement action = elements.getTypeElement("hudson.model.Action");
 
                 public Void visitClass(ClassTree ct, Void _) {
                     TreePath path = getCurrentPath();
                     TypeElement e = (TypeElement) trees.getElement(path);
-                    if(e!=null)
-                        checkIfExtension(path,e,e);
-
+                    if (e != null) {
+                        checkIfExtension(path, e, e);
+                        checkIfAction(path, e);
+                    }
                     return super.visitClass(ct, _);
                 }
 
+                /**
+                 * If the class is an action, create a record for it.
+                 */
+                private void checkIfAction(TreePath path, TypeElement e) {
+                    if (types.isSubtype(e.asType(), action.asType())) {
+                        r.add(new Action(artifact, javac, trees, e, path, collectViews(e)));
+                    }
+                }
+
+                /**
+                 * Recursively ascend the type hierarchy toward {@link Object} and find all extension points
+                 * {@code root} implement.
+                 */
                 private void checkIfExtension(TreePath pathToRoot, TypeElement root, TypeElement e) {
                     if (e==null)    return; // if the compilation fails, this can happen
 
                     for (TypeMirror i : e.getInterfaces()) {
-                        if (types.asElement(i).equals(extensionPoint))
-                            r.add(new Extension(artifact, javac, trees, root, pathToRoot, e));
+                        if (types.asElement(i).equals(extensionPoint)){
+                            r.add(new Extension(artifact, javac, trees, root, pathToRoot, e, collectViews(e)));
+                        }
                         checkIfExtension(pathToRoot,root,(TypeElement)types.asElement(i));
                     }
                     TypeMirror s = e.getSuperclass();
                     if (!(s instanceof NoType))
                         checkIfExtension(pathToRoot,root,(TypeElement)types.asElement(s));
+                }
+
+                /**
+                 * Collect views recursively going up the ancestors.
+                 */
+                private Map<String, String> collectViews(TypeElement clazz) {
+                    Map<String, String> views;
+
+                    TypeMirror s = clazz.getSuperclass();
+                    if (!(s instanceof NoType))
+                        views = collectViews((TypeElement)types.asElement(s));
+                    else
+                        views = new HashMap<String, String>();
+
+                    for (String v : sal.getViewFiles(clazz.getQualifiedName().toString())) {
+                        // views defined in subtypes override those defined in the base type
+                        views.put(FilenameUtils.getBaseName(v),v);
+                    }
+
+                    return views;
                 }
             };
 
@@ -123,6 +160,28 @@ public class ExtensionPointsExtractor {
                 fileManager.close();
             sal.close();
             ZipFileIndexCache.getSharedInstance().clearCache();
+        }
+    }
+
+    private void populateViewMap(List<File> files, Map<String,String> views){
+        for(File f: files) {
+            String fqName = f.getAbsolutePath();
+            int loc = fqName.indexOf("src");
+            if (loc > 0) {
+                String path = fqName.substring(loc + 4);
+                String[] a = path.split("/");
+                String name = a[a.length - 1];
+                int i = name.lastIndexOf(".");
+                if(i > 0){
+                    name = name.substring(0,i);
+                }
+
+                if (views.get(name) == null) {
+                    views.put(name, path);
+                }
+            } else {
+                //We can't get here as jelly files are always stored inside src root
+            }
         }
     }
 

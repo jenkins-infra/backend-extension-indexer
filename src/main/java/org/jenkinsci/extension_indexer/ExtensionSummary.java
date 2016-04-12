@@ -4,6 +4,8 @@ import net.sf.json.JSONObject;
 import org.jenkinsci.extension_indexer.ExtensionPointListGenerator.Family;
 import org.jvnet.hudson.update_center.MavenArtifact;
 
+import java.util.Map;
+
 /**
  * Captures key details of {@link Extension} but without keeping much of the work in memory.
  *
@@ -24,6 +26,10 @@ public class ExtensionSummary {
 
     public final JSONObject json;
 
+    public final boolean hasView;
+
+    public final Map<String,String> views;
+
     /**
      * True for a definition of extension point, false for an implementation of extension point.
      */
@@ -42,6 +48,8 @@ public class ExtensionSummary {
         this.extensionPoint = e.extensionPoint.getQualifiedName().toString();
         this.implementation = e.implementation!=null ? e.implementation.getQualifiedName().toString() : null;
         this.confluenceDoc = e.getConfluenceDoc();
+        this.hasView = e.hasView();
+        this.views = e.views;
         this.json = e.toJSON();
     }
 }

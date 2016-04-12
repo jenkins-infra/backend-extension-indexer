@@ -1,14 +1,21 @@
 package org.jenkinsci.extension_indexer;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.jvnet.hudson.update_center.MavenArtifact;
 
-import javax.tools.StandardJavaFileManager;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 /**
  * Extracted source files and dependency jar files for a Maven project.
@@ -18,6 +25,11 @@ import java.util.List;
 public class SourceAndLibs implements Closeable {
     public final File srcDir;
     public final File libDir;
+
+    /**
+     * Lazily built list of all views in classpath.
+     */
+    private List<String> allViews;
 
     public SourceAndLibs(File srcDir, File libDir) {
         this.srcDir = srcDir;
@@ -37,6 +49,70 @@ public class SourceAndLibs implements Closeable {
 
     public List<File> getSourceFiles() {
         return FileUtils.getFileIterator(srcDir, "java");
+    }
+
+    /**
+     * Give list of view files in a given package.
+     *
+     * @param pkg
+     *      Package name like 'foo.bar'
+     * @return
+     *      All view files in the qualified form, such as 'foo/bar/abc.groovy'
+     */
+    public List<String> getViewFiles(String pkg) {
+        List<String> views = new ArrayList<String>();
+
+        pkg = pkg.replace('.', '/');
+
+        // views in source files
+        File[] srcViews = new File(srcDir,pkg).listFiles();
+        if (srcViews!=null) {
+            for (File f : srcViews) {
+                if (VIEW_EXTENSIONS.contains(FilenameUtils.getExtension(f.getPath()))) {
+                    views.add(f.getName());
+                }
+            }
+        }
+
+        // views from dependencies
+        if (allViews==null) {
+            allViews = new ArrayList<String>();
+            for (File jar : getClassPath()) {
+                JarFile jf = null;
+                try {
+                    jf = new JarFile(jar);
+                    Enumeration<JarEntry> e = jf.entries();
+                    while (e.hasMoreElements()) {
+                        JarEntry je = e.nextElement();
+                        String n = je.getName();
+                        if (VIEW_EXTENSIONS.contains(FilenameUtils.getExtension(n))) {
+                            allViews.add(n);
+                        }
+                    }
+                } catch (IOException x) {
+                    System.err.println("Failed to open "+jar);
+                    x.printStackTrace();
+                } finally {
+                    if (jf!=null)
+                        try {
+                            jf.close();
+                        } catch (IOException _) {
+                        }
+                }
+            }
+        }
+
+        // 'foo/bar/zot.jelly' is a view but 'foo/bar/xxx/yyy.jelly' is NOT a view for 'foo/bar'
+        String prefix = pkg+'/';
+        for (String v : allViews) {
+            if (v.startsWith(prefix)) {
+                String rest = v.substring(prefix.length());
+                if (!rest.contains("/"))
+                    views.add(v);
+            }
+        }
+
+        return views;
     }
 
     public static SourceAndLibs create(MavenArtifact artifact) throws IOException, InterruptedException {
@@ -84,4 +160,6 @@ public class SourceAndLibs implements Closeable {
             throw new IOException("Maven didn't like this (exit code="+result+")! " + pomDir.getAbsolutePath());
         }
     }
+
+    private static final Set<String> VIEW_EXTENSIONS = new HashSet<String>(Arrays.asList("jelly", "groovy"));
 }

@@ -137,6 +137,10 @@ public class ExtensionPointListGenerator {
          * Extension point or extensions that are found inside this module.
          */
         final List<ExtensionSummary> extensions = new ArrayList<ExtensionSummary>();
+        /**
+         * Actions that are found inside this module.
+         */
+        final List<Action> actions = new ArrayList<Action>();
 
         protected Module(MavenArtifact artifact, String url, String displayName) {
             this.artifact = artifact;
@@ -158,13 +162,33 @@ public class ExtensionPointListGenerator {
             Set<ExtensionSummary> defs = new HashSet<ExtensionSummary>();
 
             JSONArray extensions = new JSONArray();
+            JSONArray actions = new JSONArray();
             JSONArray extensionPoints = new JSONArray();
+            int viewCount=0;
             for (ExtensionSummary es : this.extensions) {
                 (es.isDefinition ? extensionPoints : extensions).add(es.json);
                 defs.add(es.family.definition);
+
+                if(es.hasView){
+                    viewCount++;
+                }
             }
+
+            for(Action action:this.actions){
+                JSONObject jsonObject = action.toJSON();
+                actions.add(jsonObject);
+                if(action.hasView()){
+                    viewCount++;
+                }
+            }
+
+            double viewScore = (double)viewCount/(extensions.size()+actions.size());
+
+
             o.put("extensions",extensions);     // extensions defined in this module
             o.put("extensionPoints",extensionPoints);   // extension points defined in this module
+            o.put("actions", actions); // actions implemented in this module
+            o.put("viewScore", Double.parseDouble(String.format("%.2f", viewScore)));
 
             JSONArray uses = new JSONArray();
             for (ExtensionSummary es : defs) {
@@ -350,23 +374,27 @@ public class ExtensionPointListGenerator {
         }
 
         if (wikiFile!=null || jsonFile!=null) {
-            for (Extension e : extractor.extract(m.artifact)) {
+            for (ClassOfInterest e : extractor.extract(m.artifact)) {
                 synchronized (families) {
-                    System.out.printf("Found %s as %s\n",
-                            e.implementation.getQualifiedName(),
-                            e.extensionPoint.getQualifiedName());
+                    System.out.println("Found "+e);
 
-                    String key = e.extensionPoint.getQualifiedName().toString();
-                    Family f = families.get(key);
-                    if (f==null)    families.put(key,f=new Family());
+                    if (e instanceof Extension) {
+                        Extension ee = (Extension) e;
+                        String key = ee.extensionPoint.getQualifiedName().toString();
 
-                    ExtensionSummary es = new ExtensionSummary(f,e);
-                    m.extensions.add(es);
-                    if (e.isDefinition()) {
-                        assert f.definition==null;
-                        f.definition = es;
-                    } else {
-                        f.implementations.add(es);
+                        Family f = families.get(key);
+                        if (f==null)    families.put(key,f=new Family());
+
+                        ExtensionSummary es = new ExtensionSummary(f, ee);
+                        m.extensions.add(es);
+                        if (ee.isDefinition()) {
+                            assert f.definition == null;
+                            f.definition = es;
+                        } else {
+                            f.implementations.add(es);
+                        }
+                    }else if(e instanceof Action){
+                        m.actions.add((Action) e);
                     }
                 }
             }
