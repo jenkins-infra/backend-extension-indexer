@@ -8,6 +8,7 @@ import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.file.ZipFileIndexCache;
+import org.apache.commons.io.FilenameUtils;
 import org.jvnet.hudson.update_center.MavenArtifact;
 
 import javax.lang.model.element.TypeElement;
@@ -136,7 +137,10 @@ public class ExtensionPointsExtractor {
                     else
                         views = new HashMap<String, String>();
 
-                    views.putAll(sal.getJellyFiles(clazz.getQualifiedName().toString()));
+                    for (String v : sal.getViewFiles(clazz.getQualifiedName().toString())) {
+                        // views defined in subtypes override those defined in the base type
+                        views.put(FilenameUtils.getBaseName(v),v);
+                    }
 
                     return views;
                 }

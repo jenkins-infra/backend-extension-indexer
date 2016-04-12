@@ -4,7 +4,6 @@ import net.sf.json.JSONObject;
 import org.jenkinsci.extension_indexer.ExtensionPointListGenerator.Family;
 import org.jvnet.hudson.update_center.MavenArtifact;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -46,7 +45,7 @@ public class ExtensionSummary {
         this.family = f;
         this.isDefinition = e.isDefinition();
         this.artifact = e.artifact;
-        this.extensionPoint = e.getBaseTypeName();
+        this.extensionPoint = e.extensionPoint.getQualifiedName().toString();
         this.implementation = e.implementation!=null ? e.implementation.getQualifiedName().toString() : null;
         this.confluenceDoc = e.getConfluenceDoc();
         this.hasView = e.hasView();
