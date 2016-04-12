@@ -1,5 +1,6 @@
 package org.jenkinsci.extension_indexer;
 
+import com.google.common.collect.ImmutableMap;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ExpressionTree;
@@ -59,14 +60,15 @@ public abstract class ClassOfInterest {
      * Keyed by the view name (which is the base portion of the view file name). The value is the fully qualified
      * resource name.
      */
-    public final Map<String, String> views = new HashMap<String, String>();
+    public final Map<String, String> views;
 
-    ClassOfInterest(MavenArtifact artifact, JavacTask javac, Trees trees, TypeElement implementation, TreePath implPath) {
+    ClassOfInterest(MavenArtifact artifact, JavacTask javac, Trees trees, TypeElement implementation, TreePath implPath, Map<String,String> views) {
         this.artifact = artifact;
         this.javac = javac;
         this.implPath = implPath;
         this.implementation = implementation;
         this.trees = trees;
+        this.views = views;
     }
 
 

@@ -7,6 +7,7 @@ import net.sf.json.JSONObject;
 import org.jvnet.hudson.update_center.MavenArtifact;
 
 import javax.lang.model.element.TypeElement;
+import java.util.Map;
 
 /**
  * Information about the implementation of an extension point
@@ -24,8 +25,8 @@ public final class Extension extends ClassOfInterest {
     public final TypeElement extensionPoint;
 
 
-    Extension(MavenArtifact artifact, JavacTask javac, Trees trees, TypeElement implementation, TreePath implPath, TypeElement extensionPoint) {
-        super(artifact, javac, trees, implementation, implPath);
+    Extension(MavenArtifact artifact, JavacTask javac, Trees trees, TypeElement implementation, TreePath implPath, TypeElement extensionPoint, Map<String,String> views) {
+        super(artifact, javac, trees, implementation, implPath, views);
         this.extensionPoint = extensionPoint;
     }
 

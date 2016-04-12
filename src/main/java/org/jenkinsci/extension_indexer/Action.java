@@ -7,6 +7,7 @@ import net.sf.json.JSONObject;
 import org.jvnet.hudson.update_center.MavenArtifact;
 
 import javax.lang.model.element.TypeElement;
+import java.util.Map;
 
 /**
  * Instantiable {@code Action} subtype.
@@ -14,8 +15,8 @@ import javax.lang.model.element.TypeElement;
  * @author Vivek Pandey
  */
 public class Action extends ClassOfInterest {
-    Action(MavenArtifact artifact, JavacTask javac, Trees trees, TypeElement action, TreePath implPath) {
-        super(artifact, javac, trees, action, implPath);
+    Action(MavenArtifact artifact, JavacTask javac, Trees trees, TypeElement action, TreePath implPath, Map<String,String> views) {
+        super(artifact, javac, trees, action, implPath, views);
     }
 
     public TypeElement getAction() {

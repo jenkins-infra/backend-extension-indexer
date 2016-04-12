@@ -82,8 +82,6 @@ public class ExtensionPointsExtractor {
 
             final List<ClassOfInterest> r = new ArrayList<ClassOfInterest>();
 
-            final Map<String,Map<String,String>> viewMap = new HashMap<String, Map<String,String>>();
-
             // discover all compiled types
             TreePathScanner<?,?> classScanner = new TreePathScanner<Void,Void>() {
                 final TypeElement extensionPoint = elements.getTypeElement("hudson.ExtensionPoint");
@@ -104,9 +102,7 @@ public class ExtensionPointsExtractor {
                  */
                 private void checkIfAction(TreePath path, TypeElement e) {
                     if (types.isSubtype(e.asType(), action.asType())) {
-                        Action a = new Action(artifact, javac, trees, e, path);
-                        populateViewMap(sal.getJellyFiles(e.getQualifiedName().toString()), view);
-                        r.add(a);
+                        r.add(new Action(artifact, javac, trees, e, path, collectViews(e)));
                     }
                 }
 
@@ -117,18 +113,9 @@ public class ExtensionPointsExtractor {
                 private void checkIfExtension(TreePath pathToRoot, TypeElement root, TypeElement e) {
                     if (e==null)    return; // if the compilation fails, this can happen
 
-                    Map<String, String> view = viewMap.get(root.getQualifiedName().toString());
-                    if (view == null){
-                        view = new HashMap<String, String>();
-                        viewMap.put(root.getQualifiedName().toString(), view);
-                        populateViewMap(sal.getJellyFiles(root.getQualifiedName().toString()), view);
-                    }
-
                     for (TypeMirror i : e.getInterfaces()) {
                         if (types.asElement(i).equals(extensionPoint)){
-                            Extension ext = new Extension(artifact, javac, trees, root, pathToRoot, e);
-                            populateViewMap(sal.getJellyFiles(e.getQualifiedName().toString()), view);
-                            r.add(ext);
+                            r.add(new Extension(artifact, javac, trees, root, pathToRoot, e, collectViews(e)));
                         }
                         checkIfExtension(pathToRoot,root,(TypeElement)types.asElement(i));
                     }
@@ -136,15 +123,28 @@ public class ExtensionPointsExtractor {
                     if (!(s instanceof NoType))
                         checkIfExtension(pathToRoot,root,(TypeElement)types.asElement(s));
                 }
+
+                /**
+                 * Collect views recursively going up the ancestors.
+                 */
+                private Map<String, String> collectViews(TypeElement clazz) {
+                    Map<String, String> views;
+
+                    TypeMirror s = clazz.getSuperclass();
+                    if (!(s instanceof NoType))
+                        views = collectViews((TypeElement)types.asElement(s));
+                    else
+                        views = new HashMap<String, String>();
+
+                    views.putAll(sal.getJellyFiles(clazz.getQualifiedName().toString()));
+
+                    return views;
+                }
             };
 
             for( CompilationUnitTree u : parsed )
                 classScanner.scan(u,null);
 
-
-            for(ClassOfInterest coi : r){
-                coi.addViews(viewMap.get(coi.getImplementationName()));
-            }
             return r;
         } catch (AssertionError e) {
             // javac has thrown this exception for some input
