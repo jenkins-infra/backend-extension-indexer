@@ -17,8 +17,16 @@ import javax.lang.model.element.TypeElement;
  */
 public final class Extension extends BaseClass {
 
+    /**
+     * Extension point that's implemented.
+     * (from which {@link #implementation} derives from.)
+     */
+    public final TypeElement extensionPoint;
+
+
     Extension(MavenArtifact artifact, JavacTask javac, Trees trees, TypeElement implementation, TreePath implPath, TypeElement extensionPoint) {
-        super(artifact, javac, trees, implementation, implPath, extensionPoint);
+        super(artifact, javac, trees, implementation, implPath);
+        this.extensionPoint = extensionPoint;
     }
 
     /**
@@ -26,7 +34,7 @@ public final class Extension extends BaseClass {
      * (as opposed to an implementation of a defined extension point.)
      */
     public boolean isDefinition() {
-        return baseType!= null && implementation.equals(baseType);
+        return implementation.equals(extensionPoint);
     }
 
     /**
@@ -34,8 +42,8 @@ public final class Extension extends BaseClass {
      */
     public JSONObject toJSON() {
         JSONObject i = super.toJSON();
-        if (!isDefinition() && baseType != null)
-            i.put("extensionPoint",baseType.getQualifiedName().toString());
+        if (!isDefinition())
+            i.put("extensionPoint",extensionPoint.getQualifiedName().toString());
         return i;
     }
 

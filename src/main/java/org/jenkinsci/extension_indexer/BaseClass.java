@@ -33,22 +33,17 @@ public abstract class BaseClass {
     public final JavacTask javac;
 
     /**
-     * Type that implements the extension point.
-     */
-    public final TypeElement implementation;
-
-    /**
-     * Type that represents the base type
-     * (from which {@link #implementation} derives from.)
-     */
-    public final TypeElement baseType;
-
-
-    /**
      * {@link TreePath} that leads to {@link #implementation}
      */
     public final TreePath implPath;
 
+    /**
+     * Class of interest whose metadata is described in this object.
+     * <p>
+     * This is an implementation of an extension point with {@code @Extension} on (for {@link Extension}
+     * or it is a class that implements {@code Action}.
+     */
+    public final TypeElement implementation;
 
     /**
      * {@link Trees} object for {@link #javac}
@@ -57,17 +52,12 @@ public abstract class BaseClass {
 
     public final Map<String, String> views = new HashMap<String, String>();
 
-    BaseClass(MavenArtifact artifact, JavacTask javac, Trees trees, TypeElement implementation, TreePath implPath, TypeElement baseType) {
+    BaseClass(MavenArtifact artifact, JavacTask javac, Trees trees, TypeElement implementation, TreePath implPath) {
         this.artifact = artifact;
         this.javac = javac;
-        this.implementation = implementation;
         this.implPath = implPath;
+        this.implementation = implementation;
         this.trees = trees;
-        this.baseType = baseType;
-    }
-
-    public String getBaseTypeName(){
-        return baseType != null ? baseType.getQualifiedName().toString() : null;
     }
 
 

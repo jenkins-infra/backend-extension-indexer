@@ -12,15 +12,18 @@ import javax.lang.model.element.TypeElement;
  * @author Vivek Pandey
  */
 public class Action extends BaseClass {
+    Action(MavenArtifact artifact, JavacTask javac, Trees trees, TypeElement action, TreePath implPath) {
+        super(artifact, javac, trees, action, implPath);
+    }
 
-    Action(MavenArtifact artifact, JavacTask javac, Trees trees, TypeElement implementation, TreePath implPath, TypeElement action) {
-        super(artifact, javac, trees, implementation, implPath, action);
+    public TypeElement getAction() {
+        return implementation;
     }
 
     @Override
     public JSONObject toJSON() {
         JSONObject i = super.toJSON();
-        i.put("action",baseType.getQualifiedName().toString());
+        i.put("action",implementation.getQualifiedName().toString());
         return i;
     }
 }
