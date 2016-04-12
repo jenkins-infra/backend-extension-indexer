@@ -71,11 +71,8 @@ public class ExtensionPointListGenerator {
     @Option(name="-core",usage="Core version to use. If not set, default to newest")
     public String coreVersion;
     
-    @Option(name="-pipeline",usage="Create a folder with HPI files for pipeline documentation.")
-    public String pipeline;
-    
-    @Option(name="-folderLoc",usage="Root directory of the plugin folder used in Pipeline Documentation.")
-    public String folderLoc;
+    @Option(name="-plugins",usage="Collect *.hpi/jpi into this directory")
+    public File plugins;
 
     @Argument
     public List<String> args = new ArrayList<String>();
@@ -200,7 +197,7 @@ public class ExtensionPointListGenerator {
     }
 
     public void run() throws Exception {
-        if (wikiFile==null && sorcererDir==null && jsonFile==null && pipeline==null)
+        if (wikiFile==null && sorcererDir==null && jsonFile==null && plugins ==null)
             throw new IllegalStateException("Nothing to do. Either -wiki, -json, -sorcerer, or -pipeline is needed");
         if (wikiPage!=null && wikiFile==null)
             throw new IllegalStateException("Can't upload the page without generating a Wiki file.");
@@ -210,7 +207,7 @@ public class ExtensionPointListGenerator {
                 new URL("http://repo.jenkins-ci.org/public/"));
 
         //process pipeline
-        if(pipeline!=null){
+        if (plugins !=null){
             savePlugins(r);
             return;
         }
@@ -272,12 +269,6 @@ public class ExtensionPointListGenerator {
     }
     
     private void savePlugins(MavenRepository r) throws Exception {
-        final HpiAssembler hpia;
-        if(folderLoc==null){
-            hpia = new HpiAssembler();
-        } else {
-            hpia = new HpiAssembler(folderLoc);
-        }
         ExecutorService svc = Executors.newFixedThreadPool(4);
         try {
             Set<Future> futures = new HashSet<Future>();
@@ -292,7 +283,8 @@ public class ExtensionPointListGenerator {
                     public void run() {
                         try {
                             System.out.println(p.artifactId);
-                            hpia.create(p.latest());
+                            File hpi = p.latest().resolve();
+                            FileUtils.copyFile(hpi, new File(plugins, hpi.getName()));
                         } catch (Exception e) {
                             System.err.println("Failed to process "+p.artifactId);
                             e.printStackTrace();
@@ -306,7 +298,6 @@ public class ExtensionPointListGenerator {
             }
 
         } finally {
-            hpia.close();
             svc.shutdown();
         }
     }
