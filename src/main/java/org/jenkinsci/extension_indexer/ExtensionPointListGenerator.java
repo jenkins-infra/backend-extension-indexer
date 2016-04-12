@@ -70,6 +70,9 @@ public class ExtensionPointListGenerator {
 
     @Option(name="-core",usage="Core version to use. If not set, default to newest")
     public String coreVersion;
+    
+    @Option(name="-plugins",usage="Collect *.hpi/jpi into this directory")
+    public File plugins;
 
     @Argument
     public List<String> args = new ArrayList<String>();
@@ -218,15 +221,14 @@ public class ExtensionPointListGenerator {
     }
 
     public void run() throws Exception {
-        if (wikiFile==null && sorcererDir==null && jsonFile==null)
-            throw new IllegalStateException("Nothing to do. Either -wiki, -json, or -sorcerer is needed");
+        if (wikiFile==null && sorcererDir==null && jsonFile==null && plugins ==null)
+            throw new IllegalStateException("Nothing to do. Either -wiki, -json, -sorcerer, or -pipeline is needed");
         if (wikiPage!=null && wikiFile==null)
             throw new IllegalStateException("Can't upload the page without generating a Wiki file.");
 
         MavenRepositoryImpl r = new MavenRepositoryImpl();
         r.addRemoteRepository("public",
                 new URL("http://repo.jenkins-ci.org/public/"));
-
 
         HudsonWar war;
         if (coreVersion == null) {
@@ -283,7 +285,7 @@ public class ExtensionPointListGenerator {
                 new URL("http://maven.glassfish.org/content/groups/public/"));
         return r;
     }
-
+    
     /**
      * Walks over the plugins, record {@link #modules} and call {@link #discover(Module)}.
      */
@@ -304,13 +306,19 @@ public class ExtensionPointListGenerator {
                     public void run() {
                         try {
                             System.out.println(p.artifactId);
-                            Plugin pi = new Plugin(p,cpl);
-                            discover(addModule(new Module(p.latest(), pi.getWiki(), pi.getTitle()) {
-                                @Override
-                                String getWikiLink() {
-                                    return '[' + displayName + ']';
-                                }
-                            }));
+                            if (wikiFile!=null || jsonFile!=null) {
+                                Plugin pi = new Plugin(p, cpl);
+                                discover(addModule(new Module(p.latest(), pi.getWiki(), pi.getTitle()) {
+                                    @Override
+                                    String getWikiLink() {
+                                        return '[' + displayName + ']';
+                                    }
+                                }));
+                            }
+                            if (plugins!=null) {
+                                File hpi = p.latest().resolve();
+                                FileUtils.copyFile(hpi, new File(plugins, hpi.getName()));
+                            }
                         } catch (Exception e) {
                             System.err.println("Failed to process "+p.artifactId);
                             e.printStackTrace();
