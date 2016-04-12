@@ -26,4 +26,9 @@ public class Action extends BaseClass {
         i.put("action",implementation.getQualifiedName().toString());
         return i;
     }
+
+    @Override
+    public String toString() {
+        return "Action "+implementation.getQualifiedName();
+    }
 }

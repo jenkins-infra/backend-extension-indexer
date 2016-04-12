@@ -47,4 +47,8 @@ public final class Extension extends BaseClass {
         return i;
     }
 
+    @Override
+    public String toString() {
+        return "Extension "+implementation.getQualifiedName()+" of "+extensionPoint.getQualifiedName();
+    }
 }
