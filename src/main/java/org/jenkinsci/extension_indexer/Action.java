@@ -9,6 +9,8 @@ import org.jvnet.hudson.update_center.MavenArtifact;
 import javax.lang.model.element.TypeElement;
 
 /**
+ * Instantiable {@code Action} subtype.
+ *
  * @author Vivek Pandey
  */
 public class Action extends ClassOfInterest {
