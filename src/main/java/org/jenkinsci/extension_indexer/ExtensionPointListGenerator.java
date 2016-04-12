@@ -71,7 +71,7 @@ public class ExtensionPointListGenerator {
     @Option(name="-core",usage="Core version to use. If not set, default to newest")
     public String coreVersion;
     
-    @Option(name="-pipeline",required=false,usage="Create a folder with HPI files for pipeline documentation.")
+    @Option(name="-pipeline",usage="Create a folder with HPI files for pipeline documentation.")
     public String pipeline;
     
     @Option(name="-folderLoc",usage="Root directory of the plugin folder used in Pipeline Documentation.")
