@@ -137,6 +137,9 @@ public class ExtensionPointListGenerator {
          * Extension point or extensions that are found inside this module.
          */
         final List<ExtensionSummary> extensions = new ArrayList<ExtensionSummary>();
+        /**
+         * Actions that are found inside this module.
+         */
         final List<Action> actions = new ArrayList<Action>();
 
         protected Module(MavenArtifact artifact, String url, String displayName) {
@@ -373,18 +376,18 @@ public class ExtensionPointListGenerator {
         if (wikiFile!=null || jsonFile!=null) {
             for (BaseClass e : extractor.extract(m.artifact)) {
                 synchronized (families) {
-                    System.out.printf("Found %s as %s\n",
-                            e.implementation.getQualifiedName(),
-                            e.getBaseTypeName());
+                    System.out.println("Found "+e);
 
-                    String key = e.getBaseTypeName();
-                    Family f = families.get(key);
-                    if (f==null)    families.put(key,f=new Family());
+                    if (e instanceof Extension) {
+                        Extension ee = (Extension) e;
+                        String key = ee.extensionPoint.getQualifiedName().toString();
 
-                    if(e instanceof Extension) {
-                        ExtensionSummary es = new ExtensionSummary(f, (Extension) e);
+                        Family f = families.get(key);
+                        if (f==null)    families.put(key,f=new Family());
+
+                        ExtensionSummary es = new ExtensionSummary(f, ee);
                         m.extensions.add(es);
-                        if (((Extension) e).isDefinition()) {
+                        if (ee.isDefinition()) {
                             assert f.definition == null;
                             f.definition = es;
                         } else {
