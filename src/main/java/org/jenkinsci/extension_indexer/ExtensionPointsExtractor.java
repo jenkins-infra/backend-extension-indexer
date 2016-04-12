@@ -107,7 +107,7 @@ public class ExtensionPointsExtractor {
                         populateViewMap(sal.getJellyFiles(root.getQualifiedName().toString()), view);
                     }
                     if(types.isSubtype(e.asType(), action.asType())){
-                        Action a = new Action(artifact, javac, trees, root, pathToRoot, e);
+                        Action a = new Action(artifact, javac, trees, root, pathToRoot);
                         populateViewMap(sal.getJellyFiles(e.getQualifiedName().toString()), view);
                         r.add(a);
                     }
