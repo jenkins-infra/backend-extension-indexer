@@ -11,7 +11,7 @@ import javax.lang.model.element.TypeElement;
 /**
  * @author Vivek Pandey
  */
-public class Action extends BaseClass {
+public class Action extends ClassOfInterest {
     Action(MavenArtifact artifact, JavacTask javac, Trees trees, TypeElement action, TreePath implPath) {
         super(artifact, javac, trees, action, implPath);
     }

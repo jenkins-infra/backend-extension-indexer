@@ -46,11 +46,11 @@ public class ExtensionPointsExtractor {
     private MavenArtifact artifact;
     private SourceAndLibs sal;
 
-    public List<BaseClass> extract(MavenArtifact artifact) throws IOException, InterruptedException {
+    public List<ClassOfInterest> extract(MavenArtifact artifact) throws IOException, InterruptedException {
         return extract(artifact,SourceAndLibs.create(artifact));
     }
 
-    public List<BaseClass> extract(final MavenArtifact artifact, final SourceAndLibs sal) throws IOException, InterruptedException {
+    public List<ClassOfInterest> extract(final MavenArtifact artifact, final SourceAndLibs sal) throws IOException, InterruptedException {
         this.artifact = artifact;
         this.sal = sal;
 
@@ -80,7 +80,7 @@ public class ExtensionPointsExtractor {
             Iterable<? extends CompilationUnitTree> parsed = javac.parse();
             javac.analyze();
 
-            final List<BaseClass> r = new ArrayList<BaseClass>();
+            final List<ClassOfInterest> r = new ArrayList<ClassOfInterest>();
 
             final Map<String,Map<String,String>> viewMap = new HashMap<String, Map<String,String>>();
 
@@ -130,8 +130,8 @@ public class ExtensionPointsExtractor {
                 classScanner.scan(u,null);
 
 
-            for(BaseClass baseClass: r){
-                baseClass.addViews(viewMap.get(baseClass.getImplementationName()));
+            for(ClassOfInterest coi : r){
+                coi.addViews(viewMap.get(coi.getImplementationName()));
             }
             return r;
         } catch (AssertionError e) {

@@ -19,9 +19,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * Interesting thing that we pick up from plugin source code.
+ * Common parts between {@link Extension} and {@link Action}.
+ *
  * @author Vivek Pandey
  */
-public abstract class BaseClass {
+public abstract class ClassOfInterest {
     /**
      * Back reference to the artifact where this implementation was found.
      */
@@ -52,7 +55,7 @@ public abstract class BaseClass {
 
     public final Map<String, String> views = new HashMap<String, String>();
 
-    BaseClass(MavenArtifact artifact, JavacTask javac, Trees trees, TypeElement implementation, TreePath implPath) {
+    ClassOfInterest(MavenArtifact artifact, JavacTask javac, Trees trees, TypeElement implementation, TreePath implPath) {
         this.artifact = artifact;
         this.javac = javac;
         this.implPath = implPath;

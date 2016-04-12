@@ -374,7 +374,7 @@ public class ExtensionPointListGenerator {
         }
 
         if (wikiFile!=null || jsonFile!=null) {
-            for (BaseClass e : extractor.extract(m.artifact)) {
+            for (ClassOfInterest e : extractor.extract(m.artifact)) {
                 synchronized (families) {
                     System.out.println("Found "+e);
 

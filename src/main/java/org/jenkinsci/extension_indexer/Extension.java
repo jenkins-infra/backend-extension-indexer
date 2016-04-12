@@ -15,7 +15,7 @@ import javax.lang.model.element.TypeElement;
  * @author Kohsuke Kawaguchi
  * @see ExtensionSummary
  */
-public final class Extension extends BaseClass {
+public final class Extension extends ClassOfInterest {
 
     /**
      * Extension point that's implemented.
