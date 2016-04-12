@@ -206,12 +206,6 @@ public class ExtensionPointListGenerator {
         r.addRemoteRepository("public",
                 new URL("http://repo.jenkins-ci.org/public/"));
 
-        //process pipeline
-        if (plugins !=null){
-            savePlugins(r);
-            return;
-        }
-
         HudsonWar war;
         if (coreVersion == null) {
             war = r.getHudsonWar().firstEntry().getValue();
@@ -268,40 +262,6 @@ public class ExtensionPointListGenerator {
         return r;
     }
     
-    private void savePlugins(MavenRepository r) throws Exception {
-        ExecutorService svc = Executors.newFixedThreadPool(4);
-        try {
-            Set<Future> futures = new HashSet<Future>();
-            for (final PluginHistory p : new ArrayList<PluginHistory>(r.listHudsonPlugins())/*.subList(0,200)*/) {
-                if (!args.isEmpty()) {
-                    if (!args.contains(p.artifactId))
-                        continue;   // skip
-                } else if ("python-wrapper".equals(p.artifactId)) {
-                    continue;   // skip them to remove noise
-                }
-                futures.add(svc.submit(new Runnable() {
-                    public void run() {
-                        try {
-                            System.out.println(p.artifactId);
-                            File hpi = p.latest().resolve();
-                            FileUtils.copyFile(hpi, new File(plugins, hpi.getName()));
-                        } catch (Exception e) {
-                            System.err.println("Failed to process "+p.artifactId);
-                            e.printStackTrace();
-                        }
-                    }
-                }));
-            }
-            System.out.println("size of futures: " + futures.size());
-            for (Future f : futures) {
-                f.get();
-            }
-
-        } finally {
-            svc.shutdown();
-        }
-    }
-
     /**
      * Walks over the plugins, record {@link #modules} and call {@link #discover(Module)}.
      */
@@ -322,13 +282,19 @@ public class ExtensionPointListGenerator {
                     public void run() {
                         try {
                             System.out.println(p.artifactId);
-                            Plugin pi = new Plugin(p,cpl);
-                            discover(addModule(new Module(p.latest(), pi.getWiki(), pi.getTitle()) {
-                                @Override
-                                String getWikiLink() {
-                                    return '[' + displayName + ']';
-                                }
-                            }));
+                            if (wikiFile!=null || jsonFile!=null) {
+                                Plugin pi = new Plugin(p, cpl);
+                                discover(addModule(new Module(p.latest(), pi.getWiki(), pi.getTitle()) {
+                                    @Override
+                                    String getWikiLink() {
+                                        return '[' + displayName + ']';
+                                    }
+                                }));
+                            }
+                            if (plugins!=null) {
+                                File hpi = p.latest().resolve();
+                                FileUtils.copyFile(hpi, new File(plugins, hpi.getName()));
+                            }
                         } catch (Exception e) {
                             System.err.println("Failed to process "+p.artifactId);
                             e.printStackTrace();
