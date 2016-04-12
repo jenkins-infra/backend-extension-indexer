@@ -53,6 +53,12 @@ public abstract class ClassOfInterest {
      */
     public final Trees trees;
 
+    /**
+     * Jelly/groovy views associated to this class, including those defined for the ancestor types.
+     *
+     * Keyed by the view name (which is the base portion of the view file name). The value is the fully qualified
+     * resource name.
+     */
     public final Map<String, String> views = new HashMap<String, String>();
 
     ClassOfInterest(MavenArtifact artifact, JavacTask javac, Trees trees, TypeElement implementation, TreePath implPath) {
