@@ -143,7 +143,7 @@ public class ExtensionPointListGenerator {
         /**
          * Actions that are found inside this module.
          */
-        final List<Action> actions = new ArrayList<Action>();
+        final List<ActionSummary> actions = new ArrayList<ActionSummary>();
 
         protected Module(MavenArtifact artifact, String url, String displayName) {
             this.artifact = artifact;
@@ -177,10 +177,10 @@ public class ExtensionPointListGenerator {
                 }
             }
 
-            for(Action action:this.actions){
-                JSONObject jsonObject = action.toJSON();
+            for(ActionSummary action:this.actions){
+                JSONObject jsonObject = action.json;
                 actions.add(jsonObject);
-                if(action.hasView()){
+                if(action.hasView){
                     viewCount++;
                 }
             }
@@ -402,7 +402,7 @@ public class ExtensionPointListGenerator {
                             f.implementations.add(es);
                         }
                     }else if(e instanceof Action){
-                        m.actions.add((Action) e);
+                        m.actions.add(new ActionSummary((Action)e));
                     }
                 }
             }
