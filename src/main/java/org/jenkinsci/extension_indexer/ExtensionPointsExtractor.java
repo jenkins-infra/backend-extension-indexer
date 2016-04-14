@@ -45,7 +45,6 @@ public class ExtensionPointsExtractor {
      * Module whose extensions are being scanned.
      */
     private MavenArtifact artifact;
-    private SourceAndLibs sal;
 
     public List<ClassOfInterest> extract(MavenArtifact artifact) throws IOException, InterruptedException {
         return extract(artifact,SourceAndLibs.create(artifact));
@@ -53,7 +52,6 @@ public class ExtensionPointsExtractor {
 
     public List<ClassOfInterest> extract(final MavenArtifact artifact, final SourceAndLibs sal) throws IOException, InterruptedException {
         this.artifact = artifact;
-        this.sal = sal;
 
         StandardJavaFileManager fileManager = null;
         try {

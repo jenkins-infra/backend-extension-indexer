@@ -185,13 +185,14 @@ public class ExtensionPointListGenerator {
                 }
             }
 
-            double viewScore = (double)viewCount/(extensions.size()+actions.size());
-
+            if(actions.size() > 0 || extensions.size() > 0) {
+                double viewScore = (double) viewCount / (extensions.size() + actions.size());
+                o.put("viewScore", Double.parseDouble(String.format("%.2f", viewScore)));
+            }
 
             o.put("extensions",extensions);     // extensions defined in this module
             o.put("extensionPoints",extensionPoints);   // extension points defined in this module
             o.put("actions", actions); // actions implemented in this module
-            o.put("viewScore", Double.parseDouble(String.format("%.2f", viewScore)));
 
             JSONArray uses = new JSONArray();
             for (ExtensionSummary es : defs) {
