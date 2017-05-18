@@ -49,8 +49,8 @@ public class ExtensionPointListGenerator {
      */
     private final Map<MavenArtifact,Module> modules = Collections.synchronizedMap(new HashMap<MavenArtifact,Module>());
 
-    @Option(name="-wiki",usage="Generate the extension list index and write it out to the specified file.")
-    public File asciidocOutputFile;
+    @Option(name="-adoc",usage="Generate the extension list index and write it out to the specified directory.")
+    public File asciidocOutputDir;
 
     @Option(name="-sorcerer",usage="Generate sorcerer reports")
     public File sorcererDir;
@@ -83,37 +83,58 @@ public class ExtensionPointListGenerator {
             return definition.extensionPoint;
         }
 
-        void formatAsConfluencePage(PrintWriter w) {
-            w.println("h2." + definition.extensionPoint);
-            w.println(getSynopsis(definition));
-            w.println(definition.documentation);
+        public String getShortName() {
+            if (getName().contains(".")) {
+                return getName().substring(getName().lastIndexOf(".") + 1);
+            }
+            return getName();
+        }
+
+        void formatAsAsciidoc(PrintWriter w) {
             w.println();
-            w.println("{expand:title=Implementations}");
+            w.println("## " + getShortName());
+            w.println("+" + definition.extensionPoint + "+");
+            w.println();
+            w.println(definition.documentation == null || formatJavadoc(definition.documentation).trim().length() == 0 ? "_This extension point has no Javadoc documentation._" : formatJavadoc(definition.documentation));
+            w.println();
+            w.println("**Implementations:**");
+            w.println();
             for (ExtensionSummary e : implementations) {
-                w.println("h3." + (e.implementation == null || e.implementation.equals("") ? "_Anonymous Class_" : e.implementation));
-                w.println(getSynopsis(e));
-                w.println(e.documentation == null ? "_This class has no Javadoc documentation._" : e.documentation);
+                w.println();
+                w.println((e.implementation == null ? "(Anonymous class)" : e.implementation) + " " + getSynopsis(e) + "::");
+                w.println((e.documentation == null || formatJavadoc(e.documentation).trim().length() == 0 ? "_This implementation has no Javadoc documentation._" : formatJavadoc(e.documentation)));
             }
             if (implementations.isEmpty())
-                w.println("(No known implementation)");
-            w.println("{expand}");
-            w.println("");
+                w.println("_(no known implementations)_");
+            w.println();
+        }
+
+        private String formatJavadoc(String javadoc) {
+            StringBuilder formatted = new StringBuilder();
+
+            for (String line : javadoc.split("\n")) {
+                line = line.trim();
+                if (line.startsWith("@author")) {
+                    continue;
+                }
+                if (line.startsWith("@since")) {
+                    continue;
+                }
+                formatted.append(line + "\n");
+            }
+
+            return formatted.toString();
         }
 
         private String getSynopsis(ExtensionSummary e) {
             final Module m = modules.get(e.artifact);
             if (m==null)
                 throw new IllegalStateException("Unable to find module for "+e.artifact);
-            if ("Jenkins Core".equals(m.displayName)) {
-                return MessageFormat.format("*Defined in*: {0}  ([javadoc|{1}@javadoc])\n",
-                        m.getFormattedLink(), e.extensionPoint);
-            } else {
-                return MessageFormat.format("*Defined in*: {0}\n", m.getFormattedLink());
-            }
+            return MessageFormat.format("(implemented in {0})", m.getFormattedLink());
         }
 
         public int compareTo(Object that) {
-            return this.getName().compareTo(((Family)that).getName());
+            return this.getShortName().compareTo(((Family)that).getShortName());
         }
     }
 
@@ -140,9 +161,11 @@ public class ExtensionPointListGenerator {
         }
 
         /**
-         * Returns a Confluence-format link to point to this module.
+         * Returns an Asciidoc (jenkins.io flavor) formatted link to point to this module.
          */
         abstract String getFormattedLink();
+
+        abstract String getUrlName();
 
         JSONObject toJSON() {
             JSONObject o = new JSONObject();
@@ -206,8 +229,8 @@ public class ExtensionPointListGenerator {
     }
 
     public void run() throws Exception {
-        if (asciidocOutputFile ==null && sorcererDir==null && jsonFile==null && plugins ==null)
-            throw new IllegalStateException("Nothing to do. Either -wiki, -json, -sorcerer, or -pipeline is needed");
+        if (asciidocOutputDir ==null && sorcererDir==null && jsonFile==null && plugins ==null)
+            throw new IllegalStateException("Nothing to do. Either -adoc, -json, -sorcerer, or -pipeline is needed");
 
         MavenRepositoryImpl r = new MavenRepositoryImpl();
         r.addRemoteRepository("public",
@@ -222,7 +245,13 @@ public class ExtensionPointListGenerator {
         discover(addModule(new Module(war.getCoreArtifact(),"http://github.com/jenkinsci/jenkins/","Jenkins Core") {
             @Override
             String getFormattedLink() {
-                return "[Jenkins Core|Building Jenkins]";
+                // TODO different target
+                return "link:https://github.com/jenkinsci/jenkins/[Jenkins Core]";
+            }
+
+            @Override
+            String getUrlName() {
+                return "core";
             }
         }));
 
@@ -255,8 +284,8 @@ public class ExtensionPointListGenerator {
             FileUtils.writeStringToFile(jsonFile, container.toString(2));
         }
 
-        if (asciidocOutputFile !=null) {
-            generateConfluencePage();
+        if (asciidocOutputDir !=null) {
+            generateAsciidocReport();
         }
     }
 
@@ -288,12 +317,17 @@ public class ExtensionPointListGenerator {
                     public void run() {
                         try {
                             System.out.println(p.artifactId);
-                            if (asciidocOutputFile !=null || jsonFile!=null) {
+                            if (asciidocOutputDir !=null || jsonFile!=null) {
                                 Plugin pi = new Plugin(p);
                                 discover(addModule(new Module(p.latest(), pi.getPluginUrl(), pi.getName()) {
                                     @Override
                                     String getFormattedLink() {
-                                        return '[' + displayName + ']';
+                                        return "link:" + url + "[" + displayName + ']';
+                                    }
+
+                                    @Override
+                                    String getUrlName() {
+                                        return artifact.artifact.artifactId;
                                     }
                                 }));
                             }
@@ -316,7 +350,7 @@ public class ExtensionPointListGenerator {
         }
     }
 
-    private void generateConfluencePage() throws IOException {
+    private void generateAsciidocReport() throws IOException {
         Map<Module,List<Family>> byModule = new LinkedHashMap<Module,List<Family>>();
         for (Family f : families.values()) {
             if (f.definition==null)     continue;   // skip undefined extension points
@@ -327,16 +361,30 @@ public class ExtensionPointListGenerator {
             value.add(f);
         }
 
-        PrintWriter w = new PrintWriter(asciidocOutputFile);
-        IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("preamble.txt")), w);
-        for (Entry<Module, List<Family>> e : byModule.entrySet()) {
-            w.println("h1.Extension Points in "+e.getKey().getFormattedLink());
-            List<Family> fam = e.getValue();
-            Collections.sort(fam);
-            for (Family f : fam)
-                f.formatAsConfluencePage(w);
+        asciidocOutputDir.mkdirs();
+
+        try (PrintWriter w = new PrintWriter(new File(asciidocOutputDir, "index.adoc"))) {
+            IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("index-preamble.txt")), w);
+            for (Entry<Module, List<Family>> e : byModule.entrySet()) {
+                w.println();
+                w.println("* link:" + e.getKey().getUrlName() + "[Extension points defined in " + e.getKey().displayName + "]");
+            }
         }
-        w.close();
+
+        for (Entry<Module, List<Family>> e : byModule.entrySet()) {
+            List<Family> fam = e.getValue();
+            Module m = e.getKey();
+            Collections.sort(fam);
+            try (PrintWriter w = new PrintWriter(new File(asciidocOutputDir, m.getUrlName() + ".adoc"))) {
+                IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("component-preamble.txt")), w);
+                w.println("# Extension Points defined in " + m.displayName);
+                w.println();
+                w.println(m.getFormattedLink());
+                for (Family f : fam) {
+                    f.formatAsAsciidoc(w);
+                }
+            }
+        }
     }
 
     private void discover(Module m) throws IOException, InterruptedException {
@@ -346,7 +394,7 @@ public class ExtensionPointListGenerator {
             sorcererGenerator.generate(m.artifact,dir);
         }
 
-        if (asciidocOutputFile !=null || jsonFile!=null) {
+        if (asciidocOutputDir !=null || jsonFile!=null) {
             for (ClassOfInterest e : extractor.extract(m.artifact)) {
                 synchronized (families) {
                     System.out.println("Found "+e);

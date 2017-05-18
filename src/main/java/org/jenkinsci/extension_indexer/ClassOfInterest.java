@@ -107,7 +107,7 @@ public abstract class ClassOfInterest {
     }
 
     /**
-     * Javadoc excerpt converted to the confluence markup.
+     * Javadoc excerpt converted to jenkins.io flavored Asciidoc markup.
      */
     public String getDocumentation() {
         String javadoc = getJavadoc();
@@ -122,7 +122,7 @@ public abstract class ClassOfInterest {
                 StringBuffer sb = new StringBuffer();
                 while (m.find()) {
                     String simpleName = m.group(1);
-                    m.appendReplacement(sb, '[' + simpleName + "@javadoc]");
+                    m.appendReplacement(sb, "jenkinsdoc:"+simpleName+"[]");
                 }
                 m.appendTail(sb);
                 line = sb.toString();
@@ -159,6 +159,7 @@ public abstract class ClassOfInterest {
 
     private static final Pattern LINK = Pattern.compile("\\{@link ([^}]+)}");
     private static final Macro[] MACROS = new Macro[]{
+            // TODO adapt to asciidoc
             new Macro(LINK, "{{$1{}}}"),
             new Macro(Pattern.compile("<tt>([^<]+?)</tt>"), "{{$1{}}}"),
             new Macro(Pattern.compile("<b>([^<]+?)</b>"), "*$1*"),
