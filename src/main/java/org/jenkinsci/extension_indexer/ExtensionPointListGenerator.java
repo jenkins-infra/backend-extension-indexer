@@ -95,14 +95,14 @@ public class ExtensionPointListGenerator {
             w.println("## " + getShortName());
             w.println("+" + definition.extensionPoint + "+");
             w.println();
-            w.println(definition.documentation == null || formatJavadoc(definition.documentation).trim().length() == 0 ? "_This extension point has no Javadoc documentation._" : formatJavadoc(definition.documentation));
+            w.println(definition.documentation == null || formatJavadoc(definition.documentation).trim().isEmpty() ? "_This extension point has no Javadoc documentation._" : formatJavadoc(definition.documentation));
             w.println();
             w.println("**Implementations:**");
             w.println();
             for (ExtensionSummary e : implementations) {
                 w.println();
-                w.println((e.implementation == null || e.implementation.trim().length() == 0 ? "(Anonymous class)" : e.implementation) + " " + getSynopsis(e) + "::");
-                w.println((e.documentation == null || formatJavadoc(e.documentation).trim().length() == 0 ? "_This implementation has no Javadoc documentation._" : formatJavadoc(e.documentation)));
+                w.println((e.implementation == null || e.implementation.trim().isEmpty() ? "(Anonymous class)" : e.implementation) + " " + getSynopsis(e) + "::");
+                w.println((e.documentation == null || formatJavadoc(e.documentation).trim().isEmpty() ? "_This implementation has no Javadoc documentation._" : formatJavadoc(e.documentation)));
             }
             if (implementations.isEmpty())
                 w.println("_(no known implementations)_");
@@ -110,6 +110,9 @@ public class ExtensionPointListGenerator {
         }
 
         private String formatJavadoc(String javadoc) {
+            if (javadoc == null || javadoc.trim().isEmpty()) {
+                return "";
+            }
             StringBuilder formatted = new StringBuilder();
 
             for (String line : javadoc.split("\n")) {
@@ -337,6 +340,7 @@ public class ExtensionPointListGenerator {
                             }
                         } catch (Exception e) {
                             System.err.println("Failed to process "+p.artifactId);
+                            // TODO record problem with this plugin so we can report on it
                             e.printStackTrace();
                         }
                     }
