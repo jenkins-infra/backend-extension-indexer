@@ -1,13 +1,9 @@
 package org.jenkinsci.extension_indexer;
 
-import hudson.plugins.jira.soap.ConfluenceSoapService;
-import hudson.plugins.jira.soap.RemotePage;
 import hudson.util.VersionNumber;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.apache.commons.io.IOUtils;
-import org.jvnet.hudson.confluence.Confluence;
-import org.jvnet.hudson.update_center.ConfluencePluginList;
 import org.jvnet.hudson.update_center.HudsonWar;
 import org.jvnet.hudson.update_center.MavenArtifact;
 import org.jvnet.hudson.update_center.MavenRepository;
@@ -18,7 +14,6 @@ import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
-import javax.xml.rpc.ServiceException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -59,9 +54,6 @@ public class ExtensionPointListGenerator {
     @Option(name="-wiki",usage="Generate the extension list index and write it out to the specified file.")
     public File wikiFile;
 
-    @Option(name="-wikiUpload",usage="Upload the result to the specified Wiki page")
-    public String wikiPage;
-
     @Option(name="-sorcerer",usage="Generate sorcerer reports")
     public File sorcererDir;
 
@@ -79,8 +71,6 @@ public class ExtensionPointListGenerator {
 
     private ExtensionPointsExtractor extractor = new ExtensionPointsExtractor();
     private SorcererGenerator sorcererGenerator = new SorcererGenerator();
-
-    private final ConfluencePluginList cpl;
 
 
     /**
@@ -210,10 +200,6 @@ public class ExtensionPointListGenerator {
         return m;
     }
 
-    public ExtensionPointListGenerator() throws IOException, ServiceException {
-        cpl = new ConfluencePluginList();
-    }
-
     public static void main(String[] args) throws Exception {
         ExtensionPointListGenerator app = new ExtensionPointListGenerator();
         CmdLineParser p = new CmdLineParser(app);
@@ -224,8 +210,6 @@ public class ExtensionPointListGenerator {
     public void run() throws Exception {
         if (wikiFile==null && sorcererDir==null && jsonFile==null && plugins ==null)
             throw new IllegalStateException("Nothing to do. Either -wiki, -json, -sorcerer, or -pipeline is needed");
-        if (wikiPage!=null && wikiFile==null)
-            throw new IllegalStateException("Can't upload the page without generating a Wiki file.");
 
         MavenRepositoryImpl r = new MavenRepositoryImpl();
         r.addRemoteRepository("public",
@@ -275,7 +259,6 @@ public class ExtensionPointListGenerator {
 
         if (wikiFile!=null) {
             generateConfluencePage();
-            uploadToWiki();
         }
     }
 
@@ -308,8 +291,8 @@ public class ExtensionPointListGenerator {
                         try {
                             System.out.println(p.artifactId);
                             if (wikiFile!=null || jsonFile!=null) {
-                                Plugin pi = new Plugin(p, cpl);
-                                discover(addModule(new Module(p.latest(), pi.getWiki(), pi.getTitle()) {
+                                Plugin pi = new Plugin(p);
+                                discover(addModule(new Module(p.latest(), pi.getPluginUrl(), pi.getName()) {
                                     @Override
                                     String getWikiLink() {
                                         return '[' + displayName + ']';
@@ -356,23 +339,6 @@ public class ExtensionPointListGenerator {
                 f.formatAsConfluencePage(w);
         }
         w.close();
-    }
-
-    private void uploadToWiki() throws IOException, ServiceException {
-        if (wikiPage==null) return;
-        System.out.println("Uploading to " + wikiPage);
-        ConfluenceSoapService service = Confluence.connect(new URL("https://wiki.jenkins-ci.org/"));
-
-        Properties props = new Properties();
-        File credential = new File(new File(System.getProperty("user.home")), ".jenkins-ci.org");
-        if (!credential.exists())
-            throw new IOException("You need to have userName and password in "+credential);
-        props.load(new FileInputStream(credential));
-        String token = service.login(props.getProperty("userName"),props.getProperty("password"));
-
-        RemotePage p = service.getPage(token, "JENKINS", wikiPage);
-        p.setContent(FileUtils.readFileToString(wikiFile));
-        service.storePage(token,p);
     }
 
     private void discover(Module m) throws IOException, InterruptedException {
