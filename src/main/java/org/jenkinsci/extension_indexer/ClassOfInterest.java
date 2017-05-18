@@ -1,6 +1,5 @@
 package org.jenkinsci.extension_indexer;
 
-import com.google.common.collect.ImmutableMap;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ExpressionTree;
@@ -110,7 +109,7 @@ public abstract class ClassOfInterest {
     /**
      * Javadoc excerpt converted to the confluence markup.
      */
-    public String getConfluenceDoc() {
+    public String getDocumentation() {
         String javadoc = getJavadoc();
         if (javadoc == null) return null;
 
@@ -188,7 +187,7 @@ public abstract class ClassOfInterest {
         i.put("className",getImplementationName());
         i.put("artifact",artifact.getGavId());
         i.put("javadoc",getJavadoc());
-        i.put("confluenceDoc", getConfluenceDoc());
+        i.put("documentation", getDocumentation());
         i.put("sourceFile",getSourceFile());
         i.put("lineNumber",getLineNumber());
         i.put("hasView", hasView());

@@ -15,7 +15,6 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -29,7 +28,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -52,7 +50,7 @@ public class ExtensionPointListGenerator {
     private final Map<MavenArtifact,Module> modules = Collections.synchronizedMap(new HashMap<MavenArtifact,Module>());
 
     @Option(name="-wiki",usage="Generate the extension list index and write it out to the specified file.")
-    public File wikiFile;
+    public File asciidocOutputFile;
 
     @Option(name="-sorcerer",usage="Generate sorcerer reports")
     public File sorcererDir;
@@ -88,13 +86,13 @@ public class ExtensionPointListGenerator {
         void formatAsConfluencePage(PrintWriter w) {
             w.println("h2." + definition.extensionPoint);
             w.println(getSynopsis(definition));
-            w.println(definition.confluenceDoc);
+            w.println(definition.documentation);
             w.println();
             w.println("{expand:title=Implementations}");
             for (ExtensionSummary e : implementations) {
                 w.println("h3." + (e.implementation == null || e.implementation.equals("") ? "_Anonymous Class_" : e.implementation));
                 w.println(getSynopsis(e));
-                w.println(e.confluenceDoc == null ? "_This class has no Javadoc documentation._" : e.confluenceDoc);
+                w.println(e.documentation == null ? "_This class has no Javadoc documentation._" : e.documentation);
             }
             if (implementations.isEmpty())
                 w.println("(No known implementation)");
@@ -108,9 +106,9 @@ public class ExtensionPointListGenerator {
                 throw new IllegalStateException("Unable to find module for "+e.artifact);
             if ("Jenkins Core".equals(m.displayName)) {
                 return MessageFormat.format("*Defined in*: {0}  ([javadoc|{1}@javadoc])\n",
-                        m.getWikiLink(), e.extensionPoint);
+                        m.getFormattedLink(), e.extensionPoint);
             } else {
-                return MessageFormat.format("*Defined in*: {0}\n", m.getWikiLink());
+                return MessageFormat.format("*Defined in*: {0}\n", m.getFormattedLink());
             }
         }
 
@@ -144,7 +142,7 @@ public class ExtensionPointListGenerator {
         /**
          * Returns a Confluence-format link to point to this module.
          */
-        abstract String getWikiLink();
+        abstract String getFormattedLink();
 
         JSONObject toJSON() {
             JSONObject o = new JSONObject();
@@ -208,7 +206,7 @@ public class ExtensionPointListGenerator {
     }
 
     public void run() throws Exception {
-        if (wikiFile==null && sorcererDir==null && jsonFile==null && plugins ==null)
+        if (asciidocOutputFile ==null && sorcererDir==null && jsonFile==null && plugins ==null)
             throw new IllegalStateException("Nothing to do. Either -wiki, -json, -sorcerer, or -pipeline is needed");
 
         MavenRepositoryImpl r = new MavenRepositoryImpl();
@@ -223,7 +221,7 @@ public class ExtensionPointListGenerator {
         }
         discover(addModule(new Module(war.getCoreArtifact(),"http://github.com/jenkinsci/jenkins/","Jenkins Core") {
             @Override
-            String getWikiLink() {
+            String getFormattedLink() {
                 return "[Jenkins Core|Building Jenkins]";
             }
         }));
@@ -257,7 +255,7 @@ public class ExtensionPointListGenerator {
             FileUtils.writeStringToFile(jsonFile, container.toString(2));
         }
 
-        if (wikiFile!=null) {
+        if (asciidocOutputFile !=null) {
             generateConfluencePage();
         }
     }
@@ -290,11 +288,11 @@ public class ExtensionPointListGenerator {
                     public void run() {
                         try {
                             System.out.println(p.artifactId);
-                            if (wikiFile!=null || jsonFile!=null) {
+                            if (asciidocOutputFile !=null || jsonFile!=null) {
                                 Plugin pi = new Plugin(p);
                                 discover(addModule(new Module(p.latest(), pi.getPluginUrl(), pi.getName()) {
                                     @Override
-                                    String getWikiLink() {
+                                    String getFormattedLink() {
                                         return '[' + displayName + ']';
                                     }
                                 }));
@@ -329,10 +327,10 @@ public class ExtensionPointListGenerator {
             value.add(f);
         }
 
-        PrintWriter w = new PrintWriter(wikiFile);
+        PrintWriter w = new PrintWriter(asciidocOutputFile);
         IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("preamble.txt")), w);
         for (Entry<Module, List<Family>> e : byModule.entrySet()) {
-            w.println("h1.Extension Points in "+e.getKey().getWikiLink());
+            w.println("h1.Extension Points in "+e.getKey().getFormattedLink());
             List<Family> fam = e.getValue();
             Collections.sort(fam);
             for (Family f : fam)
@@ -348,7 +346,7 @@ public class ExtensionPointListGenerator {
             sorcererGenerator.generate(m.artifact,dir);
         }
 
-        if (wikiFile!=null || jsonFile!=null) {
+        if (asciidocOutputFile !=null || jsonFile!=null) {
             for (ClassOfInterest e : extractor.extract(m.artifact)) {
                 synchronized (families) {
                     System.out.println("Found "+e);
