@@ -11,7 +11,6 @@ import org.jvnet.hudson.update_center.MavenArtifact;
 
 import javax.lang.model.element.TypeElement;
 import java.io.File;
-import java.io.PrintWriter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -107,9 +106,9 @@ public final class Extension {
     }
 
     /**
-     * Javadoc excerpt converted to the confluence markup.
+     * Javadoc excerpt converted to AsciiDoc markup.
      */
-    public String getConfluenceDoc() {
+    public String getDocumentationString() {
         String javadoc = getJavadoc();
         if(javadoc==null)   return null;
 
@@ -122,7 +121,7 @@ public final class Extension {
                 StringBuffer sb = new StringBuffer();
                 while(m.find()) {
                     String simpleName = m.group(1);
-                    m.appendReplacement(sb, '['+simpleName+"@javadoc]");
+                    m.appendReplacement(sb, "jenkinsdoc:"+simpleName+"[]");
                 }
                 m.appendTail(sb);
                 line = sb.toString();
@@ -151,7 +150,7 @@ public final class Extension {
         i.put("className",implementation.getQualifiedName().toString());
         i.put("artifact",artifact.getGavId());
         i.put("javadoc",getJavadoc());
-        i.put("confluenceDoc", getConfluenceDoc());
+        i.put("documentation", getDocumentationString());
         i.put("sourceFile",getSourceFile());
         i.put("lineNumber",getLineNumber());
         return i;
@@ -173,10 +172,10 @@ public final class Extension {
 
     private static final Pattern LINK = Pattern.compile("\\{@link ([^}]+)}");
     private static final Macro[] MACROS = new Macro[] {
-        new Macro(LINK,     "{{$1{}}}"),
-        new Macro(Pattern.compile("<tt>([^<]+?)</tt>"),  "{{$1{}}}"),
-        new Macro(Pattern.compile("<b>([^<]+?)</b>"),  "*$1*"),
-        new Macro(Pattern.compile("<p/?>"),  "\n"),
+        new Macro(LINK,     "+$1+"),
+        new Macro(Pattern.compile("<tt>([^<]+?)</tt>"),  "+$1+"),
+        new Macro(Pattern.compile("<b>([^<]+?)</b>"),  "**$1**"),
+        new Macro(Pattern.compile("<p/?>"),  "\n\n"),
         new Macro(Pattern.compile("</p>"),  "")
     };
 }

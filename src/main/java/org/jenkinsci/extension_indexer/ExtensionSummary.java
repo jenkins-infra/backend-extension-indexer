@@ -19,7 +19,7 @@ public class ExtensionSummary {
 
     public final String implementation;
 
-    public final String confluenceDoc;
+    public final String documentation;
 
     public final JSONObject json;
 
@@ -27,7 +27,7 @@ public class ExtensionSummary {
         this.artifact = e.artifact;
         this.extensionPoint = e.extensionPoint.getQualifiedName().toString();
         this.implementation = e.implementation!=null ? e.implementation.getQualifiedName().toString() : null;
-        this.confluenceDoc = e.getConfluenceDoc();
+        this.documentation = e.getDocumentationString();
         this.json = e.toJSON();
     }
 }

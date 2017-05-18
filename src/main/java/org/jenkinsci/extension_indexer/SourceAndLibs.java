@@ -63,8 +63,8 @@ public class SourceAndLibs implements Closeable {
     private static void downloadDependencies(File pomDir, File destDir) throws IOException, InterruptedException {
         destDir.mkdirs();
         String program = "mvn";
-        if (System.getenv("MAVEN_HOME") != null) {
-            program = System.getenv("MAVEN_HOME") + "/bin/mvn";
+        if (System.getProperty("MAVEN_HOME") != null) {
+            program = System.getProperty("MAVEN_HOME") + "/bin/mvn";
         }
         ProcessBuilder builder = new ProcessBuilder(program,
                 "dependency:copy-dependencies",
