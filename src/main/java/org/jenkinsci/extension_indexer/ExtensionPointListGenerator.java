@@ -101,7 +101,7 @@ public class ExtensionPointListGenerator {
             w.println();
             for (ExtensionSummary e : implementations) {
                 w.println();
-                w.println((e.implementation == null ? "(Anonymous class)" : e.implementation) + " " + getSynopsis(e) + "::");
+                w.println((e.implementation == null || e.implementation.trim().length() == 0 ? "(Anonymous class)" : e.implementation) + " " + getSynopsis(e) + "::");
                 w.println((e.documentation == null || formatJavadoc(e.documentation).trim().length() == 0 ? "_This implementation has no Javadoc documentation._" : formatJavadoc(e.documentation)));
             }
             if (implementations.isEmpty())
