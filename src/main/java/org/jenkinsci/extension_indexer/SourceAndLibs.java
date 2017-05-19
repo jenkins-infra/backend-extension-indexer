@@ -143,6 +143,8 @@ public class SourceAndLibs implements Closeable {
             process = System.getenv("M2_HOME") + "/bin/mvn";
         }
         ProcessBuilder builder = new ProcessBuilder(process,
+                "--settings", new File("maven-settings.xml").getAbsolutePath(),
+                "--update-snapshots",
                 "dependency:copy-dependencies",
                 "-DincludeScope=compile",
                 "-DoutputDirectory=" + destDir.getAbsolutePath());
