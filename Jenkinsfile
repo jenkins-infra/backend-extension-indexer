@@ -5,7 +5,7 @@ properties([
         buildDiscarder(logRotator(numToKeepStr: '5')),
 ])
 
-node('linux') {
+node('highmem') {
     stage ('Prepare') {
         deleteDir()
         checkout scm
