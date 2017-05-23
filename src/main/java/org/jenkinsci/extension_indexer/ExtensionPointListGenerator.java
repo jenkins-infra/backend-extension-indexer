@@ -304,7 +304,7 @@ public class ExtensionPointListGenerator {
      * Walks over the plugins, record {@link #modules} and call {@link #discover(Module)}.
      */
     private void processPlugins(MavenRepository r) throws Exception {
-        ExecutorService svc = Executors.newFixedThreadPool(4);
+        ExecutorService svc = Executors.newFixedThreadPool(1);
         try {
             Set<Future> futures = new HashSet<Future>();
             for (final PluginHistory p : new ArrayList<PluginHistory>(r.listHudsonPlugins())/*.subList(0,200)*/) {
