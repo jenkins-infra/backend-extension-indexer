@@ -96,8 +96,7 @@ public class ExtensionPointListGenerator {
             if ("jenkins-core".equals(definition.artifact.artifact.artifactId)) {
                 w.println("+jenkinsdoc:" + definition.extensionPoint + "[]+");
             } else {
-                // TODO Implement a 'plugindoc' macro on jenkins.io site and use that here
-                w.println("+" + definition.extensionPoint + "+");
+                w.println("+jenkinsdoc:" + definition.artifact.artifact.artifactId + ":" + definition.extensionPoint + "[]+");
             }
             w.println();
             w.println(definition.documentation == null || formatJavadoc(definition.documentation).trim().isEmpty() ? "_This extension point has no Javadoc documentation._" : formatJavadoc(definition.documentation));
