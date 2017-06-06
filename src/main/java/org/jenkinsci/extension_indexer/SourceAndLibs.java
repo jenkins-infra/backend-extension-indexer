@@ -126,7 +126,7 @@ public class SourceAndLibs implements Closeable {
 
         File pom = artifact.resolvePOM();
         FileUtils.copyFile(pom, new File(srcdir, "pom.xml"));
-        downloadDependencies(srcdir,libdir);
+        downloadDependencies(srcdir, libdir);
 
         return new SourceAndLibs(srcdir, libdir) {
             @Override
@@ -135,19 +135,27 @@ public class SourceAndLibs implements Closeable {
             }
         };
     }
-
     private static void downloadDependencies(File pomDir, File destDir) throws IOException, InterruptedException {
+        downloadDependencies(pomDir, destDir, false);
+    }
+
+    private static void downloadDependencies(File pomDir, File destDir, boolean useCustomMavenSettings) throws IOException, InterruptedException {
         destDir.mkdirs();
         String process = "mvn";
         if (System.getenv("M2_HOME") != null) {
             process = System.getenv("M2_HOME") + "/bin/mvn";
         }
-        ProcessBuilder builder = new ProcessBuilder(process,
-                "--settings", new File("maven-settings.xml").getAbsolutePath(),
-                "--update-snapshots",
+        List<String> command = new ArrayList<>();
+        command.add(process);
+        if (useCustomMavenSettings) {
+            command.addAll(Arrays.asList("--settings", new File("maven-settings.xml").getAbsolutePath()));
+        }
+        command.addAll(Arrays.asList("--update-snapshots",
                 "dependency:copy-dependencies",
                 "-DincludeScope=compile",
-                "-DoutputDirectory=" + destDir.getAbsolutePath());
+                "-DoutputDirectory=" + destDir.getAbsolutePath()));
+
+        ProcessBuilder builder = new ProcessBuilder(command);
         builder.environment().put("JAVA_HOME",System.getProperty("java.home"));
         builder.directory(pomDir);
         builder.redirectErrorStream(true);
@@ -163,7 +171,12 @@ public class SourceAndLibs implements Closeable {
         int result = proc.waitFor();
         if (result != 0) {
             System.out.write(output.toByteArray());
-            throw new IOException("Maven didn't like this (exit code="+result+")! " + pomDir.getAbsolutePath());
+            if (!useCustomMavenSettings) {
+                System.out.println("Retrying with custom settings file...");
+                downloadDependencies(pomDir, destDir, true);
+            } else {
+                throw new IOException("Maven didn't like this (exit code=" + result + ")! " + pomDir.getAbsolutePath());
+            }
         }
     }
 
