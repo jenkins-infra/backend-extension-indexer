@@ -93,7 +93,12 @@ public class ExtensionPointListGenerator {
         void formatAsAsciidoc(PrintWriter w) {
             w.println();
             w.println("## " + getShortName());
-            w.println("+" + definition.extensionPoint + "+");
+            if ("jenkins-core".equals(definition.artifact.artifact.artifactId)) {
+                w.println("+jenkinsdoc:" + definition.extensionPoint + "[]+");
+            } else {
+                // TODO Implement a 'plugindoc' macro on jenkins.io site and use that here
+                w.println("+" + definition.extensionPoint + "+");
+            }
             w.println();
             w.println(definition.documentation == null || formatJavadoc(definition.documentation).trim().isEmpty() ? "_This extension point has no Javadoc documentation._" : formatJavadoc(definition.documentation));
             w.println();
@@ -102,7 +107,12 @@ public class ExtensionPointListGenerator {
             for (ExtensionSummary e : implementations) {
                 w.println();
                 w.println((e.implementation == null || e.implementation.trim().isEmpty() ? "(Anonymous class)" : e.implementation) + " " + getSynopsis(e) + "::");
-                w.println((e.documentation == null || formatJavadoc(e.documentation).trim().isEmpty() ? "_This implementation has no Javadoc documentation._" : formatJavadoc(e.documentation)));
+                w.println("+"); // list continuation to make the block as part of the list work
+                if (e.documentation == null || formatJavadoc(e.documentation).trim().isEmpty()) {
+                    w.println("_This implementation has no Javadoc documentation._");
+                } else {
+                    w.println(formatJavadoc(e.documentation));
+                }
             }
             if (implementations.isEmpty())
                 w.println("_(no known implementations)_");

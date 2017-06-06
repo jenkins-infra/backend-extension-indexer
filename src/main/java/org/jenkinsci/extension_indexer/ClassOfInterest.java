@@ -7,6 +7,8 @@ import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
 import net.sf.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Whitelist;
 import org.jvnet.hudson.update_center.MavenArtifact;
 
 import javax.lang.model.element.TypeElement;
@@ -117,23 +119,25 @@ public abstract class ClassOfInterest {
         for (String line : javadoc.split("\n")) {
             if (line.trim().length() == 0) break;
 
+            if (line.trim().startsWith("@")) continue;
+
             {// replace @link
                 Matcher m = LINK.matcher(line);
                 StringBuffer sb = new StringBuffer();
+                sb.append("+++");
                 while (m.find()) {
                     String simpleName = m.group(1);
-                    m.appendReplacement(sb, "jenkinsdoc:"+simpleName+"[]");
+                    m.appendReplacement(sb, "+++ jenkinsdoc:"+simpleName+"[] +++");
                 }
                 m.appendTail(sb);
+                sb.append("+++");
                 line = sb.toString();
             }
 
-            for (Macro m : MACROS)
-                line = m.replace(line);
             output.append(line).append(' ');
         }
 
-        return output.toString();
+        return Jsoup.clean(output.toString(), Whitelist.basic());
     }
 
     /**
@@ -143,29 +147,7 @@ public abstract class ClassOfInterest {
         return artifact.artifact.artifactId;
     }
 
-    private static final class Macro {
-        private final Pattern from;
-        private final String to;
-
-        private Macro(Pattern from, String to) {
-            this.from = from;
-            this.to = to;
-        }
-
-        public String replace(String s) {
-            return from.matcher(s).replaceAll(to);
-        }
-    }
-
-    private static final Pattern LINK = Pattern.compile("\\{@link ([^}]+)}");
-    private static final Macro[] MACROS = new Macro[]{
-            // TODO adapt to asciidoc
-            new Macro(LINK, "{{$1{}}}"),
-            new Macro(Pattern.compile("<tt>([^<]+?)</tt>"), "{{$1{}}}"),
-            new Macro(Pattern.compile("<b>([^<]+?)</b>"), "*$1*"),
-            new Macro(Pattern.compile("<p/?>"), "\n"),
-            new Macro(Pattern.compile("</p>"), "")
-    };
+    private static final Pattern LINK = Pattern.compile("\\s*\\{@link ([^}]+)}\\s*");
 
     public String getImplementationName(){
         return implementation.getQualifiedName().toString();
