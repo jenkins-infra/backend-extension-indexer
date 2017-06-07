@@ -4,6 +4,7 @@ import hudson.util.VersionNumber;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jvnet.hudson.update_center.HudsonWar;
 import org.jvnet.hudson.update_center.MavenArtifact;
 import org.jvnet.hudson.update_center.MavenRepository;
@@ -169,7 +170,15 @@ public class ExtensionPointListGenerator {
         protected Module(MavenArtifact artifact, String url, String displayName) {
             this.artifact = artifact;
             this.url = url;
-            this.displayName = displayName;
+            this.displayName = simplifyDisplayName(displayName);
+        }
+
+        private String simplifyDisplayName(String displayName) {
+            displayName = StringUtils.removeEndIgnoreCase(displayName, " for Jenkins");
+            displayName = StringUtils.removeEndIgnoreCase(displayName, " Plugin");
+            displayName = StringUtils.removeEndIgnoreCase(displayName, " Plug-In");
+            displayName = StringUtils.removeStartIgnoreCase(displayName, "Jenkins ");
+            return displayName;
         }
 
         /**
