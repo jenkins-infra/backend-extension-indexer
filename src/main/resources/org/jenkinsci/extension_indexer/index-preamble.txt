@@ -1,6 +1,7 @@
 ---
 title: Extensions Index
 layout: developersection
+uneditable: true
 ---
 :toc:
 

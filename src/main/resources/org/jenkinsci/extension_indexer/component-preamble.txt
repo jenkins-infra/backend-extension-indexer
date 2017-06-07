@@ -1,4 +1,5 @@
 ---
 layout: developersection
+uneditable: true
 ---
 :toc:
