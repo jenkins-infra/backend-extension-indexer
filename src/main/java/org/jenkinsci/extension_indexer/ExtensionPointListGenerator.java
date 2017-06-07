@@ -334,7 +334,7 @@ public class ExtensionPointListGenerator {
                                 discover(addModule(new Module(p.latest(), pi.getPluginUrl(), pi.getName()) {
                                     @Override
                                     String getFormattedLink() {
-                                        return "link:" + url + "[" + displayName + ']';
+                                        return "plugin:" + artifact.artifact.artifactId + "[" + displayName + "]";
                                     }
 
                                     @Override
