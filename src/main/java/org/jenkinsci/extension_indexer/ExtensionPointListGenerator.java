@@ -174,10 +174,14 @@ public class ExtensionPointListGenerator {
         }
 
         private String simplifyDisplayName(String displayName) {
+            if (displayName.equals("Jenkins Core")) {
+                return displayName;
+            }
+            displayName = StringUtils.removeStartIgnoreCase(displayName, "Jenkins ");
             displayName = StringUtils.removeEndIgnoreCase(displayName, " for Jenkins");
             displayName = StringUtils.removeEndIgnoreCase(displayName, " Plugin");
             displayName = StringUtils.removeEndIgnoreCase(displayName, " Plug-In");
-            displayName = StringUtils.removeStartIgnoreCase(displayName, "Jenkins ");
+            displayName = displayName + " Plugin"; // standardize spelling
             return displayName;
         }
 
