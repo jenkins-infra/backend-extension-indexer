@@ -230,13 +230,13 @@ public class ExtensionPointListGenerator {
 
         @Override
         public int compareTo(Module o) {
-            String self = this.getUrlName().toLowerCase(Locale.US);
-            String other = o.getUrlName().toLowerCase(Locale.US);
+            String self = this.getUrlName();
+            String other = o.getUrlName();
 
             if (other.equals("core") || self.equals("core")) {
                 return self.equals("core") ? (other.equals("core") ? 0 : -1 ) : 1;
             } else {
-                return self.compareTo(other);
+                return this.displayName.compareToIgnoreCase(o.displayName);
             }
         }
 
