@@ -25,11 +25,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -154,7 +155,7 @@ public class ExtensionPointListGenerator {
     /**
      * Information about the module that we scanned extensions.
      */
-    abstract class Module {
+    abstract class Module implements Comparable<Module> {
         final MavenArtifact artifact;
         final String url;
         final String displayName;
@@ -240,6 +241,20 @@ public class ExtensionPointListGenerator {
 
             return o;
         }
+
+        @Override
+        public int compareTo(Module o) {
+            String self = this.getUrlName();
+            String other = o.getUrlName();
+
+            if (other.equals("core") || self.equals("core")) {
+                return self.equals("core") ? (other.equals("core") ? 0 : -1 ) : 1;
+            } else {
+                return this.displayName.compareToIgnoreCase(o.displayName);
+            }
+        }
+
+
     }
 
     private Module addModule(Module m) {
@@ -378,7 +393,7 @@ public class ExtensionPointListGenerator {
     }
 
     private void generateAsciidocReport() throws IOException {
-        Map<Module,List<Family>> byModule = new LinkedHashMap<Module,List<Family>>();
+        Map<Module,List<Family>> byModule = new TreeMap<>();
         for (Family f : families.values()) {
             if (f.definition==null)     continue;   // skip undefined extension points
 
