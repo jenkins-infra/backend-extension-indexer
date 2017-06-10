@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -71,6 +70,8 @@ public class ExtensionPointListGenerator {
 
     private ExtensionPointsExtractor extractor = new ExtensionPointsExtractor();
     private SorcererGenerator sorcererGenerator = new SorcererGenerator();
+
+    private static final String JENKINS_CORE_URL_NAME = "jenkins-core";
 
 
     /**
@@ -247,8 +248,8 @@ public class ExtensionPointListGenerator {
             String self = this.getUrlName();
             String other = o.getUrlName();
 
-            if (other.equals("core") || self.equals("core")) {
-                return self.equals("core") ? (other.equals("core") ? 0 : -1 ) : 1;
+            if (other.equals(JENKINS_CORE_URL_NAME) || self.equals(JENKINS_CORE_URL_NAME)) {
+                return self.equals(JENKINS_CORE_URL_NAME) ? (other.equals(JENKINS_CORE_URL_NAME) ? 0 : -1 ) : 1;
             } else {
                 return this.displayName.compareToIgnoreCase(o.displayName);
             }
@@ -292,7 +293,7 @@ public class ExtensionPointListGenerator {
 
             @Override
             String getUrlName() {
-                return "core";
+                return JENKINS_CORE_URL_NAME;
             }
         }));
 
