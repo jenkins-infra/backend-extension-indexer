@@ -109,11 +109,21 @@ public class ExtensionPointListGenerator {
             for (ExtensionSummary e : implementations) {
                 w.println();
                 w.println((e.implementation == null || e.implementation.trim().isEmpty() ? "(Anonymous class)" : e.implementation) + " " + getSynopsis(e) + "::");
-                w.println("+"); // list continuation to make the block as part of the list work
-                if (e.documentation == null || formatJavadoc(e.documentation).trim().isEmpty()) {
-                    w.println("_This implementation has no Javadoc documentation._");
-                } else {
-                    w.println(formatJavadoc(e.documentation));
+
+                if (e.implementation != null && !e.implementation.trim().isEmpty()) {
+                    // if this is a non-anon class, try to link to it
+                    w.println("+"); // list continuation to make the block as part of the list work
+                    String artifactId = e.artifact.artifact.artifactId;
+                    if (artifactId.equals("jenkins-core")) {
+                        w.println("link:https://github.com/jenkinsci/jenkins/blob/master/core/src/main/java/" + e.packageName.replace(".", "/") + "/" + e.topLevelClassName + ".java" + "[view on GitHub]");
+                    } else {
+                        String scmUrl = UpdateCenterUtil.getScmUrlForPlugin(artifactId);
+                        if (scmUrl != null) {
+                            if (scmUrl.contains("github.com")) { // should be limited to GitHub URLs, but best to be safe
+                                w.println("link:" + scmUrl + "/search?q=" + e.className + "[view on GitHub]");
+                            }
+                        }
+                    }
                 }
             }
             if (implementations.isEmpty())
