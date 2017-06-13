@@ -107,11 +107,13 @@ public class ExtensionPointListGenerator {
             w.println("**Implementations:**");
             w.println();
             for (ExtensionSummary e : implementations) {
+                w.print("* " + modules.get(e.artifact).getFormattedLink() + ": ");
                 if (e.implementation == null || e.implementation.trim().isEmpty()) {
-                    w.println("* Anonymous class in " + e.packageName + ".**" + e.topLevelClassName + "** " + getSynopsis(e) + " " + getSourceReference(e));
+                    w.print("Anonymous class in " + e.packageName + ".**" + e.topLevelClassName + "**");
                 } else {
-                    w.println("* " + e.packageName + ".**" + e.className + "** " + getSynopsis(e) + " " + getSourceReference(e));
+                    w.print(e.packageName + ".**" + e.className + "**");
                 }
+                w.println(" " + getSourceReference(e));
             }
             if (implementations.isEmpty())
                 w.println("_(no known implementations)_");
@@ -153,11 +155,11 @@ public class ExtensionPointListGenerator {
             return formatted.toString();
         }
 
-        private String getSynopsis(ExtensionSummary e) {
+        private String getModuleLink(ExtensionSummary e) {
             final Module m = modules.get(e.artifact);
             if (m==null)
                 throw new IllegalStateException("Unable to find module for "+e.artifact);
-            return MessageFormat.format("implemented in {0}", m.getFormattedLink());
+            return m.getFormattedLink();
         }
 
         public int compareTo(Object that) {
