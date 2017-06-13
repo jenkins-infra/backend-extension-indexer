@@ -108,7 +108,7 @@ public class ExtensionPointListGenerator {
             w.println();
             for (ExtensionSummary e : implementations) {
                 if (e.implementation == null || e.implementation.trim().isEmpty()) {
-                    w.println("* Anonymous class " + getSynopsis(e));
+                    w.println("* Anonymous class in " + e.packageName + ".**" + e.topLevelClassName + "** " + getSynopsis(e) + " " + getSourceReference(e));
                 } else {
                     w.println("* " + e.packageName + ".**" + e.className + "** " + getSynopsis(e) + " " + getSourceReference(e));
                 }
