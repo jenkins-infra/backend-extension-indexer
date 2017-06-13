@@ -1,9 +1,16 @@
 package org.jenkinsci.extension_indexer;
 
 import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.extension_indexer.ExtensionPointListGenerator.Family;
 import org.jvnet.hudson.update_center.MavenArtifact;
 
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.TypeElement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -30,6 +37,12 @@ public class ExtensionSummary {
 
     public final Map<String,String> views;
 
+    public final String packageName;
+
+    public final String className;
+
+    public final String topLevelClassName;
+
     /**
      * True for a definition of extension point, false for an implementation of extension point.
      */
@@ -49,7 +62,38 @@ public class ExtensionSummary {
         this.implementation = e.implementation!=null ? e.implementation.getQualifiedName().toString() : null;
         this.documentation = e.getDocumentation();
         this.hasView = e.hasView();
+        this.packageName = findPackageName(e.implementation);
+        this.className = findClassName(e.implementation);
+        this.topLevelClassName = findTopLevelClassName(e.implementation);
         this.views = e.views;
         this.json = e.toJSON();
+    }
+
+    private String findPackageName(TypeElement element) {
+        Element parent = element.getEnclosingElement();
+        while (!(parent.getKind().equals(ElementKind.PACKAGE))) {
+            parent = parent.getEnclosingElement();
+        }
+        return ((PackageElement) parent).getQualifiedName().toString();
+    }
+
+    private String findTopLevelClassName(Element element) {
+        while (!(element.getEnclosingElement().getKind().equals(ElementKind.PACKAGE))) {
+            element = element.getEnclosingElement();
+        }
+        return element.getSimpleName().toString();
+    }
+
+    private String findClassName(Element element) {
+        List<String> names = new ArrayList<>();
+        while (!(element.getKind().equals(ElementKind.PACKAGE))) {
+            names.add(0, element.getSimpleName().toString());
+            element = element.getEnclosingElement();
+        }
+        if (names.contains(null)) {
+            return null;
+        }
+
+        return StringUtils.join(names, ".");
     }
 }
