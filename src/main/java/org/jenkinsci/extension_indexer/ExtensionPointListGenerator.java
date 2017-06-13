@@ -107,28 +107,30 @@ public class ExtensionPointListGenerator {
             w.println("**Implementations:**");
             w.println();
             for (ExtensionSummary e : implementations) {
-                w.println();
-                w.println((e.implementation == null || e.implementation.trim().isEmpty() ? "(Anonymous class)" : e.implementation) + " " + getSynopsis(e) + "::");
-
-                if (e.implementation != null && !e.implementation.trim().isEmpty()) {
-                    // if this is a non-anon class, try to link to it
-                    w.println("+"); // list continuation to make the block as part of the list work
-                    String artifactId = e.artifact.artifact.artifactId;
-                    if (artifactId.equals("jenkins-core")) {
-                        w.println("link:https://github.com/jenkinsci/jenkins/blob/master/core/src/main/java/" + e.packageName.replace(".", "/") + "/" + e.topLevelClassName + ".java" + "[view on GitHub]");
-                    } else {
-                        String scmUrl = UpdateCenterUtil.getScmUrlForPlugin(artifactId);
-                        if (scmUrl != null) {
-                            if (scmUrl.contains("github.com")) { // should be limited to GitHub URLs, but best to be safe
-                                w.println("link:" + scmUrl + "/search?q=" + e.className + "[view on GitHub]");
-                            }
-                        }
-                    }
+                if (e.implementation == null || e.implementation.trim().isEmpty()) {
+                    w.println("* Anonymous class " + getSynopsis(e));
+                } else {
+                    w.println("* " + e.packageName + ".**" + e.className + "** " + getSynopsis(e) + " " + getSourceReference(e));
                 }
             }
             if (implementations.isEmpty())
                 w.println("_(no known implementations)_");
             w.println();
+        }
+
+        public String getSourceReference(ExtensionSummary e) {
+            String artifactId = e.artifact.artifact.artifactId;
+            if (artifactId.equals("jenkins-core")) {
+                return "(link:https://github.com/jenkinsci/jenkins/blob/master/core/src/main/java/" + e.packageName.replace(".", "/") + "/" + e.topLevelClassName + ".java" + "[view on GitHub])";
+            } else {
+                String scmUrl = UpdateCenterUtil.getScmUrlForPlugin(artifactId);
+                if (scmUrl != null) {
+                    if (scmUrl.contains("github.com")) { // should be limited to GitHub URLs, but best to be safe
+                        return "(link:" + scmUrl + "/search?q=" + e.className + "[view on GitHub])";
+                    }
+                }
+            }
+            return "";
         }
 
         private String formatJavadoc(String javadoc) {
@@ -155,7 +157,7 @@ public class ExtensionPointListGenerator {
             final Module m = modules.get(e.artifact);
             if (m==null)
                 throw new IllegalStateException("Unable to find module for "+e.artifact);
-            return MessageFormat.format("(implemented in {0})", m.getFormattedLink());
+            return MessageFormat.format("implemented in {0}", m.getFormattedLink());
         }
 
         public int compareTo(Object that) {
