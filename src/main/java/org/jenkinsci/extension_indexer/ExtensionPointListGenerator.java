@@ -109,9 +109,9 @@ public class ExtensionPointListGenerator {
             for (ExtensionSummary e : implementations) {
                 w.print("* " + modules.get(e.artifact).getFormattedLink() + ": ");
                 if (e.implementation == null || e.implementation.trim().isEmpty()) {
-                    w.print("Anonymous class in " + e.packageName + ".**" + e.topLevelClassName + "**");
+                    w.print("Anonymous class in " + (e.packageName + ".**" + e.topLevelClassName).replace(".", ".+++<wbr/>+++") + "**");
                 } else {
-                    w.print(e.packageName + ".**" + e.className + "**");
+                    w.print((e.packageName + ".**" + e.className + "**").replace(".", ".+++<wbr/>+++"));
                 }
                 w.println(" " + getSourceReference(e));
             }
