@@ -78,7 +78,14 @@ public class ExtensionPointListGenerator {
     private Comparator<ExtensionSummary> IMPLEMENTATION_SORTER = new Comparator<ExtensionSummary>() {
         @Override
         public int compare(ExtensionSummary o1, ExtensionSummary o2) {
-            return modules.get(o1.artifact).compareTo(modules.get(o2.artifact));
+            int moduleOrder = modules.get(o1.artifact).compareTo(modules.get(o2.artifact));
+            if (moduleOrder != 0) {
+                return moduleOrder;
+            }
+            if (o1.className == null || o2.className == null) {
+                return o1.className == null ? (o2.className == null ? 0 : 1) : -1;
+            }
+            return o1.className.compareTo(o2.className);
         }
     };
 
@@ -368,7 +375,7 @@ public class ExtensionPointListGenerator {
         ExecutorService svc = Executors.newFixedThreadPool(1);
         try {
             Set<Future> futures = new HashSet<Future>();
-            for (final PluginHistory p : new ArrayList<PluginHistory>(r.listHudsonPlugins())./*subList(0,200)*/) {
+            for (final PluginHistory p : new ArrayList<PluginHistory>(r.listHudsonPlugins())/*.subList(0,200)*/) {
                 if (!args.isEmpty()) {
                     if (!args.contains(p.artifactId))
                         continue;   // skip
