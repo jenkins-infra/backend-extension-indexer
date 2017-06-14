@@ -20,16 +20,18 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.URL;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -73,6 +75,19 @@ public class ExtensionPointListGenerator {
 
     private static final String JENKINS_CORE_URL_NAME = "jenkins-core";
 
+    private Comparator<ExtensionSummary> IMPLEMENTATION_SORTER = new Comparator<ExtensionSummary>() {
+        @Override
+        public int compare(ExtensionSummary o1, ExtensionSummary o2) {
+            int moduleOrder = modules.get(o1.artifact).compareTo(modules.get(o2.artifact));
+            if (moduleOrder != 0) {
+                return moduleOrder;
+            }
+            if (o1.className == null || o2.className == null) {
+                return o1.className == null ? (o2.className == null ? 0 : 1) : -1;
+            }
+            return o1.className.compareTo(o2.className);
+        }
+    };
 
     /**
      * Relationship between definition and implementations of the extension points.
@@ -80,7 +95,7 @@ public class ExtensionPointListGenerator {
     public class Family implements Comparable {
         // from definition
         ExtensionSummary definition;
-        private final List<ExtensionSummary> implementations = new ArrayList<ExtensionSummary>();
+        private final SortedSet<ExtensionSummary> implementations = new TreeSet<>(IMPLEMENTATION_SORTER);
 
         public String getName() {
             return definition.extensionPoint;
@@ -107,11 +122,13 @@ public class ExtensionPointListGenerator {
             w.println("**Implementations:**");
             w.println();
             for (ExtensionSummary e : implementations) {
+                w.print("* " + modules.get(e.artifact).getFormattedLink() + ": ");
                 if (e.implementation == null || e.implementation.trim().isEmpty()) {
-                    w.println("* Anonymous class in " + e.packageName + ".**" + e.topLevelClassName + "** " + getSynopsis(e) + " " + getSourceReference(e));
+                    w.print("Anonymous class in " + (e.packageName + ".**" + e.topLevelClassName).replace(".", ".+++<wbr/>+++") + "**");
                 } else {
-                    w.println("* " + e.packageName + ".**" + e.className + "** " + getSynopsis(e) + " " + getSourceReference(e));
+                    w.print((e.packageName + ".**" + e.className + "**").replace(".", ".+++<wbr/>+++"));
                 }
+                w.println(" " + getSourceReference(e));
             }
             if (implementations.isEmpty())
                 w.println("_(no known implementations)_");
@@ -153,11 +170,11 @@ public class ExtensionPointListGenerator {
             return formatted.toString();
         }
 
-        private String getSynopsis(ExtensionSummary e) {
+        private String getModuleLink(ExtensionSummary e) {
             final Module m = modules.get(e.artifact);
             if (m==null)
                 throw new IllegalStateException("Unable to find module for "+e.artifact);
-            return MessageFormat.format("implemented in {0}", m.getFormattedLink());
+            return m.getFormattedLink();
         }
 
         public int compareTo(Object that) {
