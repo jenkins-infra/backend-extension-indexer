@@ -20,16 +20,18 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.URL;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -73,6 +75,12 @@ public class ExtensionPointListGenerator {
 
     private static final String JENKINS_CORE_URL_NAME = "jenkins-core";
 
+    private Comparator<ExtensionSummary> IMPLEMENTATION_SORTER = new Comparator<ExtensionSummary>() {
+        @Override
+        public int compare(ExtensionSummary o1, ExtensionSummary o2) {
+            return modules.get(o1.artifact).compareTo(modules.get(o2.artifact));
+        }
+    };
 
     /**
      * Relationship between definition and implementations of the extension points.
@@ -80,7 +88,7 @@ public class ExtensionPointListGenerator {
     public class Family implements Comparable {
         // from definition
         ExtensionSummary definition;
-        private final List<ExtensionSummary> implementations = new ArrayList<ExtensionSummary>();
+        private final SortedSet<ExtensionSummary> implementations = new TreeSet<>(IMPLEMENTATION_SORTER);
 
         public String getName() {
             return definition.extensionPoint;
@@ -360,7 +368,7 @@ public class ExtensionPointListGenerator {
         ExecutorService svc = Executors.newFixedThreadPool(1);
         try {
             Set<Future> futures = new HashSet<Future>();
-            for (final PluginHistory p : new ArrayList<PluginHistory>(r.listHudsonPlugins())/*.subList(0,200)*/) {
+            for (final PluginHistory p : new ArrayList<PluginHistory>(r.listHudsonPlugins())./*subList(0,200)*/) {
                 if (!args.isEmpty()) {
                     if (!args.contains(p.artifactId))
                         continue;   // skip
