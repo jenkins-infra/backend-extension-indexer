@@ -102,10 +102,7 @@ public class ExtensionPointListGenerator {
         }
 
         public String getShortName() {
-            if (getName().contains(".")) {
-                return getName().substring(getName().lastIndexOf(".") + 1);
-            }
-            return getName();
+            return definition.className;
         }
 
         void formatAsAsciidoc(PrintWriter w) {
