@@ -135,11 +135,8 @@ public class SourceAndLibs implements Closeable {
             }
         };
     }
-    private static void downloadDependencies(File pomDir, File destDir) throws IOException, InterruptedException {
-        downloadDependencies(pomDir, destDir, false);
-    }
 
-    private static void downloadDependencies(File pomDir, File destDir, boolean useCustomMavenSettings) throws IOException, InterruptedException {
+    private static void downloadDependencies(File pomDir, File destDir) throws IOException, InterruptedException {
         destDir.mkdirs();
         String process = "mvn";
         if (System.getenv("M2_HOME") != null) {
@@ -147,9 +144,7 @@ public class SourceAndLibs implements Closeable {
         }
         List<String> command = new ArrayList<>();
         command.add(process);
-        if (useCustomMavenSettings) {
-            command.addAll(Arrays.asList("--settings", new File("maven-settings.xml").getAbsolutePath()));
-        }
+        command.addAll(Arrays.asList("--settings", new File("maven-settings.xml").getAbsolutePath()));
         command.addAll(Arrays.asList("--update-snapshots",
                 "dependency:copy-dependencies",
                 "-DincludeScope=compile",
@@ -171,12 +166,7 @@ public class SourceAndLibs implements Closeable {
         int result = proc.waitFor();
         if (result != 0) {
             System.out.write(output.toByteArray());
-            if (!useCustomMavenSettings) {
-                System.out.println("Retrying with custom settings file...");
-                downloadDependencies(pomDir, destDir, true);
-            } else {
-                throw new IOException("Maven didn't like this (exit code=" + result + ")! " + pomDir.getAbsolutePath());
-            }
+            throw new IOException("Maven didn't like this (exit code=" + result + ")! " + pomDir.getAbsolutePath());
         }
     }
 
