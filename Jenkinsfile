@@ -27,7 +27,9 @@ node('highmem') {
                 "JAVA_HOME=${tool 'jdk8'}",
                 "PATH+JAVA=${tool 'jdk8'}/bin"
         ]) {
-            sh 'java -jar target/extension-indexer-*-bin/extension-indexer-*.jar -adoc dist'
+            timeout(time: 10, unit: 'HOURS') {
+                sh 'java -jar target/extension-indexer-*-bin/extension-indexer-*.jar -adoc dist'
+            }
         }
     }
 
