@@ -107,7 +107,7 @@ public class ExtensionPointListGenerator {
 
         void formatAsAsciidoc(PrintWriter w) {
             w.println();
-            w.println("## " + getShortName());
+            w.println("## " + getShortName().replace(".", ".+++<wbr/>+++"));
             if ("jenkins-core".equals(definition.artifact.artifact.artifactId)) {
                 w.println("+jenkinsdoc:" + definition.extensionPoint + "[]+");
             } else {
