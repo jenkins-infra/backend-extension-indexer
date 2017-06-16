@@ -102,15 +102,12 @@ public class ExtensionPointListGenerator {
         }
 
         public String getShortName() {
-            if (getName().contains(".")) {
-                return getName().substring(getName().lastIndexOf(".") + 1);
-            }
-            return getName();
+            return definition.className;
         }
 
         void formatAsAsciidoc(PrintWriter w) {
             w.println();
-            w.println("## " + getShortName());
+            w.println("## " + getShortName().replace(".", ".+++<wbr/>+++"));
             if ("jenkins-core".equals(definition.artifact.artifact.artifactId)) {
                 w.println("+jenkinsdoc:" + definition.extensionPoint + "[]+");
             } else {
