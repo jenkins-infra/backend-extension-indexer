@@ -1,6 +1,6 @@
 ---
 title: Extensions Index
-layout: developersection
+layout: developerextension
 uneditable: true
 ---
 :toc:
