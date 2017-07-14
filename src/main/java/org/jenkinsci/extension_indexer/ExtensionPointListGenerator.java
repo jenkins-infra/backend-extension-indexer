@@ -140,7 +140,7 @@ public class ExtensionPointListGenerator {
                 String scmUrl = UpdateCenterUtil.getScmUrlForPlugin(artifactId);
                 if (scmUrl != null) {
                     if (scmUrl.contains("github.com")) { // should be limited to GitHub URLs, but best to be safe
-                        return "(link:" + scmUrl + "/search?q=" + e.className + "[view on GitHub])";
+                        return "(link:" + scmUrl + "/search?q=" + e.className + "&type=Code[view on GitHub])";
                     }
                 }
             }
