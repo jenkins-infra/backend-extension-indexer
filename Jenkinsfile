@@ -3,6 +3,10 @@
 
 properties([
         buildDiscarder(logRotator(numToKeepStr: '5')),
+        pipelineTriggers([
+                // run every Sunday
+                cron('H H * * 0')
+        ])
 ])
 
 node('highmem') {
