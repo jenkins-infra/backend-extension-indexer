@@ -146,6 +146,7 @@ public class SourceAndLibs implements Closeable {
         command.add(process);
         command.addAll(Arrays.asList("--settings", new File("maven-settings.xml").getAbsolutePath()));
         command.addAll(Arrays.asList("--update-snapshots",
+                "--batch-mode",
                 "dependency:copy-dependencies",
                 "-DincludeScope=compile",
                 "-DoutputDirectory=" + destDir.getAbsolutePath()));

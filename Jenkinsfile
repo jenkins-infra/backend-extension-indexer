@@ -21,7 +21,7 @@ node('highmem') {
                 "JAVA_HOME=${tool 'jdk8'}",
                 "PATH+JAVA=${tool 'jdk8'}/bin"
         ]) {
-            sh 'mvn -e clean verify'
+            sh 'mvn -B -e clean verify'
         }
     }
 
