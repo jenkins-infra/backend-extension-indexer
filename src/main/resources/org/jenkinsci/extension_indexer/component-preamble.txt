@@ -3,3 +3,4 @@ layout: developerextension
 uneditable: true
 ---
 :toc:
+:compat-mode!:
