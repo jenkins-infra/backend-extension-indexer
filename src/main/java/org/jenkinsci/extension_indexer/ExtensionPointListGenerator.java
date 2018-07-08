@@ -109,9 +109,9 @@ public class ExtensionPointListGenerator {
             w.println();
             w.println("## " + getShortName().replace(".", ".+++<wbr/>+++"));
             if ("jenkins-core".equals(definition.artifact.artifact.artifactId)) {
-                w.println("+jenkinsdoc:" + definition.extensionPoint + "[]+");
+                w.println("`jenkinsdoc:" + definition.extensionPoint + "[]`");
             } else {
-                w.println("+jenkinsdoc:" + definition.artifact.artifact.artifactId + ":" + definition.extensionPoint + "[]+");
+                w.println("`jenkinsdoc:" + definition.artifact.artifact.artifactId + ":" + definition.extensionPoint + "[]`");
             }
             w.println();
             w.println(definition.documentation == null || formatJavadoc(definition.documentation).trim().isEmpty() ? "_This extension point has no Javadoc documentation._" : formatJavadoc(definition.documentation));

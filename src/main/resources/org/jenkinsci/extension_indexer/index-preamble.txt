@@ -4,6 +4,7 @@ layout: developerextension
 uneditable: true
 ---
 :toc:
+:compat-mode!:
 
 Jenkins defines extension points, which are interfaces or abstract classes that model an aspect of its behavior.
 Those interfaces define contracts of what need to be implemented, and Jenkins allows plugins to contribute those implementations.
