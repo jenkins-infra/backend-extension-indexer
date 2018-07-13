@@ -8,7 +8,7 @@ uneditable: true
 
 Jenkins defines extension points, which are interfaces or abstract classes that model an aspect of its behavior.
 Those interfaces define contracts of what need to be implemented, and Jenkins allows plugins to contribute those implementations.
-In general, all you need to do to register an implementation is to mark it with +@Extension+.
+In general, all you need to do to register an implementation is to mark it with `@Extension`.
 Creating a new extension point is quite easy too, see link:https://wiki.jenkins-ci.org/display/JENKINS/Defining+a+new+extension+point[defining a new extension point] for details.
 
 This index has been generated automatically. Javadoc excerpts are taken from core and plugin source code, and may have been improperly converted to HTML, so some may appear broken.
