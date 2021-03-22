@@ -262,7 +262,7 @@ public class ExtensionPointListGenerator {
                         try {
                             System.out.println(artifactId);
                             if (asciidocOutputDir !=null || jsonFile!=null) {
-                                discover(addModule(new Module.PluginModule(plugin.getString("gav"), plugin.getString("url"), plugin.getString("title"), plugin.getString("scm"))));
+                                discover(addModule(new Module.PluginModule(plugin.getString("gav"), plugin.getString("url"), plugin.getString("title"), plugin.optString("scm"))));
                             }
                             if (pluginsDir!=null) {
                                 FileUtils.copyURLToFile(
