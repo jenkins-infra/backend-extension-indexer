@@ -3,6 +3,7 @@ package org.jenkinsci.extension_indexer;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
@@ -186,18 +187,23 @@ public class ExtensionPointListGenerator {
         app.run();
     }
 
-    public JSONObject getUrl(String url) throws MalformedURLException, IOException {
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new URL(url).openStream()));
-        String readLine;
-        StringBuilder sb = new StringBuilder();
-        while ((readLine = bufferedReader.readLine()) != null) {
-            sb.append(readLine);
+    public JSONObject getJsonUrl(String url) throws MalformedURLException, IOException {
+        try (
+                InputStream is = new URL(url).openStream();
+                InputStreamReader isr = new InputStreamReader(is);
+                BufferedReader bufferedReader = new BufferedReader(isr)
+            ) {
+            String readLine;
+            StringBuilder sb = new StringBuilder();
+            while ((readLine = bufferedReader.readLine()) != null) {
+                sb.append(readLine);
+            }
+            return JSONObject.fromObject(sb.toString());
         }
-        return JSONObject.fromObject(sb.toString());
     }
 
     public void run() throws Exception {
-        JSONObject updateCenterJson = getUrl(updateCenterJsonFile);
+        JSONObject updateCenterJson = getJsonUrl(updateCenterJsonFile);
 
         if (asciidocOutputDir ==null && sorcererDir==null && jsonFile==null && pluginsDir ==null)
             throw new IllegalStateException("Nothing to do. Either -adoc, -json, -sorcerer, or -pipeline is needed");
