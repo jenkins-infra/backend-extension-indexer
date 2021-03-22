@@ -1,26 +1,14 @@
 package org.jenkinsci.extension_indexer;
 
-import hudson.util.VersionNumber;
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.jvnet.hudson.update_center.HudsonWar;
-import org.jvnet.hudson.update_center.MavenArtifact;
-import org.jvnet.hudson.update_center.MavenRepository;
-import org.jvnet.hudson.update_center.MavenRepositoryImpl;
-import org.jvnet.hudson.update_center.Plugin;
-import org.jvnet.hudson.update_center.PluginHistory;
-import org.kohsuke.args4j.Argument;
-import org.kohsuke.args4j.CmdLineParser;
-import org.kohsuke.args4j.Option;
-
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -36,6 +24,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
+import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
 /**
  * Command-line tool to list up extension points and their implementations into a JSON file.
  *
@@ -50,7 +47,7 @@ public class ExtensionPointListGenerator {
     /**
      * All the modules we scanned keyed by its {@link Module#artifact}
      */
-    private final Map<MavenArtifact,Module> modules = Collections.synchronizedMap(new HashMap<MavenArtifact,Module>());
+    private final Map<String,Module> modules = Collections.synchronizedMap(new HashMap<String,Module>());
 
     @Option(name="-adoc",usage="Generate the extension list index and write it out to the specified directory.")
     public File asciidocOutputDir;
@@ -61,11 +58,11 @@ public class ExtensionPointListGenerator {
     @Option(name="-json",usage="Generate extension points, implementatoins, and their relationships in JSON")
     public File jsonFile;
 
-    @Option(name="-core",usage="Core version to use. If not set, default to newest")
-    public String coreVersion;
-    
     @Option(name="-plugins",usage="Collect *.hpi/jpi into this directory")
-    public File plugins;
+    public File pluginsDir;
+
+    @Option(name="-updateCenterJson",usage="Update center's json")
+    public String updateCenterJsonFile = "https://updates.jenkins.io/current/update-center.actual.json";
 
     @Argument
     public List<String> args = new ArrayList<String>();
@@ -73,12 +70,10 @@ public class ExtensionPointListGenerator {
     private ExtensionPointsExtractor extractor = new ExtensionPointsExtractor();
     private SorcererGenerator sorcererGenerator = new SorcererGenerator();
 
-    private static final String JENKINS_CORE_URL_NAME = "jenkins-core";
-
     private Comparator<ExtensionSummary> IMPLEMENTATION_SORTER = new Comparator<ExtensionSummary>() {
         @Override
         public int compare(ExtensionSummary o1, ExtensionSummary o2) {
-            int moduleOrder = modules.get(o1.artifact).compareTo(modules.get(o2.artifact));
+            int moduleOrder = o1.module.compareTo(o2.module);
             if (moduleOrder != 0) {
                 return moduleOrder;
             }
@@ -108,10 +103,10 @@ public class ExtensionPointListGenerator {
         void formatAsAsciidoc(PrintWriter w) {
             w.println();
             w.println("## " + getShortName().replace(".", ".+++<wbr/>+++"));
-            if ("jenkins-core".equals(definition.artifact.artifact.artifactId)) {
+            if ("jenkins-core".equals(definition.module.artifactId)) {
                 w.println("`jenkinsdoc:" + definition.extensionPoint + "[]`");
             } else {
-                w.println("`jenkinsdoc:" + definition.artifact.artifact.artifactId + ":" + definition.extensionPoint + "[]`");
+                w.println("`jenkinsdoc:" + definition.module.artifactId + ":" + definition.extensionPoint + "[]`");
             }
             w.println();
             w.println(definition.documentation == null || formatJavadoc(definition.documentation).trim().isEmpty() ? "_This extension point has no Javadoc documentation._" : formatJavadoc(definition.documentation));
@@ -119,7 +114,7 @@ public class ExtensionPointListGenerator {
             w.println("**Implementations:**");
             w.println();
             for (ExtensionSummary e : implementations) {
-                w.print("* " + modules.get(e.artifact).getFormattedLink() + ": ");
+                w.print("* " + e.module.getFormattedLink() + ": ");
                 if (e.implementation == null || e.implementation.trim().isEmpty()) {
                     w.print("Anonymous class in " + (e.packageName + ".**" + e.topLevelClassName).replace(".", ".+++<wbr/>+++") + "**");
                 } else {
@@ -133,11 +128,11 @@ public class ExtensionPointListGenerator {
         }
 
         public String getSourceReference(ExtensionSummary e) {
-            String artifactId = e.artifact.artifact.artifactId;
+            String artifactId = e.module.artifactId;
             if (artifactId.equals("jenkins-core")) {
                 return "(link:https://github.com/jenkinsci/jenkins/blob/master/core/src/main/java/" + e.packageName.replace(".", "/") + "/" + e.topLevelClassName + ".java" + "[view on GitHub])";
-            } else {
-                String scmUrl = UpdateCenterUtil.getScmUrlForPlugin(artifactId);
+            } else if (e.module instanceof Module.PluginModule) {
+                String scmUrl = ((Module.PluginModule) e.module).scm;
                 if (scmUrl != null) {
                     if (scmUrl.contains("github.com")) { // should be limited to GitHub URLs, but best to be safe
                         return "(link:" + scmUrl + "/search?q=" + e.className + "&type=Code[view on GitHub])";
@@ -168,9 +163,9 @@ public class ExtensionPointListGenerator {
         }
 
         private String getModuleLink(ExtensionSummary e) {
-            final Module m = modules.get(e.artifact);
+            final Module m = e.module;
             if (m==null)
-                throw new IllegalStateException("Unable to find module for "+e.artifact);
+                throw new IllegalStateException("Unable to find module for "+e.module.artifactId);
             return m.getFormattedLink();
         }
 
@@ -179,113 +174,8 @@ public class ExtensionPointListGenerator {
         }
     }
 
-    /**
-     * Information about the module that we scanned extensions.
-     */
-    abstract class Module implements Comparable<Module> {
-        final MavenArtifact artifact;
-        final String url;
-        final String displayName;
-        /**
-         * Extension point or extensions that are found inside this module.
-         */
-        final List<ExtensionSummary> extensions = new ArrayList<ExtensionSummary>();
-        /**
-         * Actions that are found inside this module.
-         */
-        final List<ActionSummary> actions = new ArrayList<ActionSummary>();
-
-        protected Module(MavenArtifact artifact, String url, String displayName) {
-            this.artifact = artifact;
-            this.url = url;
-            this.displayName = simplifyDisplayName(displayName);
-        }
-
-        private String simplifyDisplayName(String displayName) {
-            if (displayName.equals("Jenkins Core")) {
-                return displayName;
-            }
-            displayName = StringUtils.removeStartIgnoreCase(displayName, "Jenkins ");
-            displayName = StringUtils.removeStartIgnoreCase(displayName, "Hudson ");
-            displayName = StringUtils.removeEndIgnoreCase(displayName, " for Jenkins");
-            displayName = StringUtils.removeEndIgnoreCase(displayName, " Plugin");
-            displayName = StringUtils.removeEndIgnoreCase(displayName, " Plug-In");
-            displayName = displayName + " Plugin"; // standardize spelling
-            return displayName;
-        }
-
-        /**
-         * Returns an Asciidoc (jenkins.io flavor) formatted link to point to this module.
-         */
-        abstract String getFormattedLink();
-
-        abstract String getUrlName();
-
-        JSONObject toJSON() {
-            JSONObject o = new JSONObject();
-            o.put("gav",artifact.getGavId());
-            o.put("url",url);
-            o.put("displayName",displayName);
-
-            Set<ExtensionSummary> defs = new HashSet<ExtensionSummary>();
-
-            JSONArray extensions = new JSONArray();
-            JSONArray actions = new JSONArray();
-            JSONArray extensionPoints = new JSONArray();
-            int viewCount=0;
-            for (ExtensionSummary es : this.extensions) {
-                (es.isDefinition ? extensionPoints : extensions).add(es.json);
-                defs.add(es.family.definition);
-
-                if(es.hasView){
-                    viewCount++;
-                }
-            }
-
-            for(ActionSummary action:this.actions){
-                JSONObject jsonObject = action.json;
-                actions.add(jsonObject);
-                if(action.hasView){
-                    viewCount++;
-                }
-            }
-
-            if(actions.size() > 0 || extensions.size() > 0) {
-                double viewScore = (double) viewCount / (extensions.size() + actions.size());
-                o.put("viewScore", Double.parseDouble(String.format("%.2f", viewScore)));
-            }
-
-            o.put("extensions",extensions);     // extensions defined in this module
-            o.put("extensionPoints",extensionPoints);   // extension points defined in this module
-            o.put("actions", actions); // actions implemented in this module
-
-            JSONArray uses = new JSONArray();
-            for (ExtensionSummary es : defs) {
-                if (es==null)   continue;
-                uses.add(es.json);
-            }
-            o.put("uses", uses);    // extension points that this module consumes
-
-            return o;
-        }
-
-        @Override
-        public int compareTo(Module o) {
-            String self = this.getUrlName();
-            String other = o.getUrlName();
-
-            if (other.equals(JENKINS_CORE_URL_NAME) || self.equals(JENKINS_CORE_URL_NAME)) {
-                return self.equals(JENKINS_CORE_URL_NAME) ? (other.equals(JENKINS_CORE_URL_NAME) ? 0 : -1 ) : 1;
-            } else {
-                return this.displayName.compareToIgnoreCase(o.displayName);
-            }
-        }
-
-
-    }
-
     private Module addModule(Module m) {
-        modules.put(m.artifact,m);
+        modules.put(m.artifactId,m);
         return m;
     }
 
@@ -296,34 +186,25 @@ public class ExtensionPointListGenerator {
         app.run();
     }
 
+    public JSONObject getUrl(String url) throws MalformedURLException, IOException {
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new URL(url).openStream()));
+        String readLine;
+        StringBuilder sb = new StringBuilder();
+        while ((readLine = bufferedReader.readLine()) != null) {
+            sb.append(readLine);
+        }
+        return JSONObject.fromObject(sb.toString());
+    }
+
     public void run() throws Exception {
-        if (asciidocOutputDir ==null && sorcererDir==null && jsonFile==null && plugins ==null)
+        JSONObject updateCenterJson = getUrl(updateCenterJsonFile);
+
+        if (asciidocOutputDir ==null && sorcererDir==null && jsonFile==null && pluginsDir ==null)
             throw new IllegalStateException("Nothing to do. Either -adoc, -json, -sorcerer, or -pipeline is needed");
 
-        MavenRepositoryImpl r = new MavenRepositoryImpl();
-        r.addRemoteRepository("public",
-                new URL("http://repo.jenkins-ci.org/public/"));
+        discover(addModule(new Module.CoreModule(updateCenterJson.getJSONObject("core").getString("version"))));
 
-        HudsonWar war;
-        if (coreVersion == null) {
-            war = r.getHudsonWar().firstEntry().getValue();
-        } else {
-            war = r.getHudsonWar().get(new VersionNumber(coreVersion));
-        }
-        discover(addModule(new Module(war.getCoreArtifact(),"http://github.com/jenkinsci/jenkins/","Jenkins Core") {
-            @Override
-            String getFormattedLink() {
-                // TODO different target
-                return "link:https://github.com/jenkinsci/jenkins/[Jenkins Core]";
-            }
-
-            @Override
-            String getUrlName() {
-                return JENKINS_CORE_URL_NAME;
-            }
-        }));
-
-        processPlugins(r);
+        processPlugins(updateCenterJson.getJSONObject("plugins").values());
 
         if (jsonFile!=null) {
             JSONObject all = new JSONObject();
@@ -342,7 +223,7 @@ public class ExtensionPointListGenerator {
             // this object captures information about modules where extensions are defined/found.
             final JSONObject artifacts = new JSONObject();
             for (Module m : modules.values()) {
-                artifacts.put(m.artifact.getGavId(),m.toJSON());
+                artifacts.put(m.gav, m.toJSON());
             }
 
             JSONObject container = new JSONObject();
@@ -357,54 +238,40 @@ public class ExtensionPointListGenerator {
         }
     }
 
-    private MavenRepositoryImpl createRepository() throws Exception {
-        MavenRepositoryImpl r = new MavenRepositoryImpl();
-        r.addRemoteRepository("java.net2",
-                new File("updates.jenkins-ci.org"),
-                new URL("http://maven.glassfish.org/content/groups/public/"));
-        return r;
-    }
-    
     /**
      * Walks over the plugins, record {@link #modules} and call {@link #discover(Module)}.
+     * @param plugins
      */
-    private void processPlugins(MavenRepository r) throws Exception {
+    private void processPlugins(Collection<JSONObject> plugins) throws Exception {
         ExecutorService svc = Executors.newFixedThreadPool(1);
         try {
             Set<Future> futures = new HashSet<Future>();
-            for (final PluginHistory p : new ArrayList<PluginHistory>(r.listHudsonPlugins())/*.subList(0,200)*/) {
+            for (final JSONObject plugin : plugins) {
+                final String artifactId = plugin.getString("name");
                 if (!args.isEmpty()) {
-                    if (!args.contains(p.artifactId))
+                    if (!args.contains(artifactId))
                         continue;   // skip
-                } else if ("python-wrapper".equals(p.artifactId)) {
+                } else if ("python-wrapper".equals(artifactId)) {
                     // python-wrapper does not have extension points but just wrappers to help python plugins use extension points
                     // see https://issues.jenkins-ci.org/browse/INFRA-516
                     continue;   // skip them to remove noise
                 }
+
                 futures.add(svc.submit(new Runnable() {
                     public void run() {
                         try {
-                            System.out.println(p.artifactId);
+                            System.out.println(artifactId);
                             if (asciidocOutputDir !=null || jsonFile!=null) {
-                                Plugin pi = new Plugin(p);
-                                discover(addModule(new Module(p.latest(), pi.getPluginUrl(), pi.getName()) {
-                                    @Override
-                                    String getFormattedLink() {
-                                        return "plugin:" + artifact.artifact.artifactId + "[" + displayName + "]";
-                                    }
-
-                                    @Override
-                                    String getUrlName() {
-                                        return artifact.artifact.artifactId;
-                                    }
-                                }));
+                                discover(addModule(new Module.PluginModule(plugin.getString("gav"), plugin.getString("url"), plugin.getString("title"), plugin.getString("scm"))));
                             }
-                            if (plugins!=null) {
-                                File hpi = p.latest().resolve();
-                                FileUtils.copyFile(hpi, new File(plugins, hpi.getName()));
+                            if (pluginsDir!=null) {
+                                FileUtils.copyURLToFile(
+                                        new URL(plugin.getString("url")),
+                                        new File(pluginsDir, FilenameUtils.getName(plugin.getString("url")))
+                                );
                             }
                         } catch (Exception e) {
-                            System.err.println("Failed to process "+p.artifactId);
+                            System.err.println("Failed to process "+artifactId);
                             // TODO record problem with this plugin so we can report on it
                             e.printStackTrace();
                         }
@@ -424,7 +291,7 @@ public class ExtensionPointListGenerator {
         for (Family f : families.values()) {
             if (f.definition==null)     continue;   // skip undefined extension points
 
-            Module key = modules.get(f.definition.artifact);
+            Module key = f.definition.module;
             List<Family> value = byModule.get(key);
             if (value==null)    byModule.put(key,value=new ArrayList<Family>());
             value.add(f);
@@ -458,13 +325,13 @@ public class ExtensionPointListGenerator {
 
     private void discover(Module m) throws IOException, InterruptedException {
         if (sorcererDir!=null) {
-            final File dir = new File(sorcererDir, m.artifact.artifact.artifactId);
+            final File dir = new File(sorcererDir, m.artifactId);
             dir.mkdirs();
-            sorcererGenerator.generate(m.artifact,dir);
+            sorcererGenerator.generate(m,dir);
         }
 
         if (asciidocOutputDir !=null || jsonFile!=null) {
-            for (ClassOfInterest e : extractor.extract(m.artifact)) {
+            for (ClassOfInterest e : extractor.extract(m)) {
                 synchronized (families) {
                     System.out.println("Found "+e);
 

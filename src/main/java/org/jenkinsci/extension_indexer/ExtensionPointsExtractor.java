@@ -9,7 +9,6 @@ import com.sun.source.util.Trees;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.file.ZipFileIndexCache;
 import org.apache.commons.io.FilenameUtils;
-import org.jvnet.hudson.update_center.MavenArtifact;
 
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.NoType;
@@ -44,14 +43,14 @@ public class ExtensionPointsExtractor {
     /**
      * Module whose extensions are being scanned.
      */
-    private MavenArtifact artifact;
+    private Module module;
 
-    public List<ClassOfInterest> extract(MavenArtifact artifact) throws IOException, InterruptedException {
-        return extract(artifact,SourceAndLibs.create(artifact));
+    public List<ClassOfInterest> extract(Module module) throws IOException, InterruptedException {
+        return extract(module,SourceAndLibs.create(module));
     }
 
-    public List<ClassOfInterest> extract(final MavenArtifact artifact, final SourceAndLibs sal) throws IOException, InterruptedException {
-        this.artifact = artifact;
+    public List<ClassOfInterest> extract(final Module module, final SourceAndLibs sal) throws IOException, InterruptedException {
+        this.module = module;
 
         StandardJavaFileManager fileManager = null;
         try {
@@ -101,7 +100,7 @@ public class ExtensionPointsExtractor {
                  */
                 private void checkIfAction(TreePath path, TypeElement e) {
                     if (types.isSubtype(e.asType(), action.asType())) {
-                        r.add(new Action(artifact, javac, trees, e, path, collectViews(e)));
+                        r.add(new Action(module, javac, trees, e, path, collectViews(e)));
                     }
                 }
 
@@ -114,7 +113,7 @@ public class ExtensionPointsExtractor {
 
                     for (TypeMirror i : e.getInterfaces()) {
                         if (types.asElement(i).equals(extensionPoint)){
-                            r.add(new Extension(artifact, javac, trees, root, pathToRoot, e, collectViews(e)));
+                            r.add(new Extension(module, javac, trees, root, pathToRoot, e, collectViews(e)));
                         }
                         checkIfExtension(pathToRoot,root,(TypeElement)types.asElement(i));
                     }
@@ -150,7 +149,7 @@ public class ExtensionPointsExtractor {
             return r;
         } catch (AssertionError e) {
             // javac has thrown this exception for some input
-            System.err.println("Failed to analyze "+artifact.getGavId());
+            System.err.println("Failed to analyze "+module.gav);
             e.printStackTrace();
             return Collections.emptyList();
         } finally {

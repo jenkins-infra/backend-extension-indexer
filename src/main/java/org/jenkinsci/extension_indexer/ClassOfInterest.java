@@ -9,7 +9,6 @@ import com.sun.source.util.Trees;
 import net.sf.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
-import org.jvnet.hudson.update_center.MavenArtifact;
 
 import javax.lang.model.element.TypeElement;
 import java.io.File;
@@ -28,9 +27,9 @@ import java.util.regex.Pattern;
  */
 public abstract class ClassOfInterest {
     /**
-     * Back reference to the artifact where this implementation was found.
+     * Back reference to the module where this implementation was found.
      */
-    public final MavenArtifact artifact;
+    public final Module module;
 
     /**
      * The compiler session where this information was determined.
@@ -63,8 +62,8 @@ public abstract class ClassOfInterest {
      */
     public final Map<String, String> views;
 
-    ClassOfInterest(MavenArtifact artifact, JavacTask javac, Trees trees, TypeElement implementation, TreePath implPath, Map<String,String> views) {
-        this.artifact = artifact;
+    ClassOfInterest(Module module, JavacTask javac, Trees trees, TypeElement implementation, TreePath implPath, Map<String,String> views) {
+        this.module = module;
         this.javac = javac;
         this.implPath = implPath;
         this.implementation = implementation;
@@ -141,10 +140,10 @@ public abstract class ClassOfInterest {
     }
 
     /**
-     * Returns the artifact Id of the plugin that it came from.
+     * Returns the module Id of the plugin that it came from.
      */
     public String getArtifactId() {
-        return artifact.artifact.artifactId;
+        return module.artifactId;
     }
 
     private static final Pattern LINK = Pattern.compile("\\s*\\{@link ([^}]+)}\\s*");
@@ -168,7 +167,7 @@ public abstract class ClassOfInterest {
     public JSONObject toJSON(){
         JSONObject i = new JSONObject();
         i.put("className",getImplementationName());
-        i.put("artifact",artifact.getGavId());
+        i.put("module",module.gav);
         i.put("javadoc",getJavadoc());
         i.put("documentation", getDocumentation());
         i.put("sourceFile",getSourceFile());
