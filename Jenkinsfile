@@ -2,6 +2,7 @@
 // not really
 
 properties([
+        disableConcurrentBuilds(),
         buildDiscarder(logRotator(numToKeepStr: '5')),
         pipelineTriggers([
                 // run every Sunday
