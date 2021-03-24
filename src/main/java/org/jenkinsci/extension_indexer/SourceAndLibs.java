@@ -132,7 +132,7 @@ public class SourceAndLibs implements Closeable {
         System.out.println("Fetching " + module.getResolvedPomUrl());
         FileUtils.copyURLToFile(module.getResolvedPomUrl(), new File(srcdir, "pom.xml"));
 
-        System.out.println("Downloading Dependacies");
+        System.out.println("Downloading Dependencies");
         downloadDependencies(srcdir, libdir);
 
         return new SourceAndLibs(srcdir, libdir) {
