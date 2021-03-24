@@ -17,7 +17,7 @@ node('highmem') {
 
     stage ('Build') {
         dir("deps") {
-            runMaven(["clean", "verify"])
+            infra.runMaven(["clean", "verify"])
         }
     }
 
@@ -25,7 +25,7 @@ node('highmem') {
         if (isRunningOnJenkinsInfra()) {
             retrieveMavenSettingsFile( "${pwd}/maven-settings.xml")
         }
-        runWithMaven('java -jar target/extension-indexer-*-bin/extension-indexer-*.jar -adoc dist')
+        infra.runWithMaven('java -jar target/extension-indexer-*-bin/extension-indexer-*.jar -adoc dist')
     }
 
     stage('Archive') {
