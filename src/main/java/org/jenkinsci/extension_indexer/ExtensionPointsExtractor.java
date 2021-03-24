@@ -156,7 +156,11 @@ public class ExtensionPointsExtractor {
             if (fileManager!=null)
                 fileManager.close();
             sal.close();
-            ZipFileIndexCache.getSharedInstance().clearCache();
+            try {
+                ZipFileIndexCache.getSharedInstance().clearCache();
+            } catch (NoClassDefFoundError e) {
+                e.printStackTrace();
+            }
         }
     }
 
