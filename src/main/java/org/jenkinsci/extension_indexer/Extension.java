@@ -4,7 +4,6 @@ import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
 import net.sf.json.JSONObject;
-import org.jvnet.hudson.update_center.MavenArtifact;
 
 import javax.lang.model.element.TypeElement;
 import java.util.Map;
@@ -25,8 +24,8 @@ public final class Extension extends ClassOfInterest {
     public final TypeElement extensionPoint;
 
 
-    Extension(MavenArtifact artifact, JavacTask javac, Trees trees, TypeElement implementation, TreePath implPath, TypeElement extensionPoint, Map<String,String> views) {
-        super(artifact, javac, trees, implementation, implPath, views);
+    Extension(Module module, JavacTask javac, Trees trees, TypeElement implementation, TreePath implPath, TypeElement extensionPoint, Map<String,String> views) {
+        super(module, javac, trees, implementation, implPath, views);
         this.extensionPoint = extensionPoint;
     }
 

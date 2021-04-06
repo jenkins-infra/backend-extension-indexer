@@ -2,6 +2,7 @@
 // not really
 
 properties([
+        disableConcurrentBuilds(),
         buildDiscarder(logRotator(numToKeepStr: '5')),
         pipelineTriggers([
                 // run every Sunday
@@ -16,23 +17,14 @@ node('highmem') {
     }
 
     stage ('Build') {
-        withEnv([
-                "PATH+MVN=${tool 'mvn'}/bin",
-                "JAVA_HOME=${tool 'jdk8'}",
-                "PATH+JAVA=${tool 'jdk8'}/bin"
-        ]) {
-            sh 'mvn -B -e clean verify'
-        }
+        infra.runMaven(["clean", "verify"])
     }
 
     stage ('Generate') {
-        withEnv([
-                "PATH+MVN=${tool 'mvn'}/bin",
-                "JAVA_HOME=${tool 'jdk8'}",
-                "PATH+JAVA=${tool 'jdk8'}/bin"
-        ]) {
-            sh 'java -jar target/extension-indexer-*-bin/extension-indexer-*.jar -adoc dist'
+        if (infra.isRunningOnJenkinsInfra()) {
+            infra.retrieveMavenSettingsFile( "${pwd}/maven-settings.xml")
         }
+        infra.runWithMaven('java -jar target/extension-indexer-*-bin/extension-indexer-*.jar -adoc dist')
     }
 
     stage('Archive') {

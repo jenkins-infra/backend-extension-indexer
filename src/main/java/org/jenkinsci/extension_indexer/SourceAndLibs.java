@@ -2,12 +2,12 @@ package org.jenkinsci.extension_indexer;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
-import org.jvnet.hudson.update_center.MavenArtifact;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -115,17 +115,24 @@ public class SourceAndLibs implements Closeable {
         return views;
     }
 
-    public static SourceAndLibs create(MavenArtifact artifact) throws IOException, InterruptedException {
+    public static SourceAndLibs create(Module module) throws IOException, InterruptedException {
         final File tempDir = File.createTempFile("jenkins","extPoint");
         tempDir.delete();
         tempDir.mkdirs();
 
         File srcdir = new File(tempDir,"src");
         File libdir = new File(tempDir,"lib");
-        FileUtils.unzip(artifact.resolveSources(), srcdir);
 
-        File pom = artifact.resolvePOM();
-        FileUtils.copyFile(pom, new File(srcdir, "pom.xml"));
+        System.out.println("Fetching " + module.getSourcesUrl());
+
+        File sourcesJar = File.createTempFile(module.artifactId, "sources");
+        IOUtils.copy(module.getSourcesUrl().openStream(), FileUtils.openOutputStream(sourcesJar));
+        FileUtils.unzip(sourcesJar, srcdir);
+
+        System.out.println("Fetching " + module.getResolvedPomUrl());
+        FileUtils.copyURLToFile(module.getResolvedPomUrl(), new File(srcdir, "pom.xml"));
+
+        System.out.println("Downloading Dependencies");
         downloadDependencies(srcdir, libdir);
 
         return new SourceAndLibs(srcdir, libdir) {

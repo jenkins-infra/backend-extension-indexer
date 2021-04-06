@@ -1,27 +1,26 @@
 package org.jenkinsci.extension_indexer;
 
-import org.jvnet.hudson.update_center.MavenArtifact;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+
 import org.jvnet.sorcerer.Analyzer;
 import org.jvnet.sorcerer.Dependency;
 import org.jvnet.sorcerer.FrameSetGenerator;
 import org.jvnet.sorcerer.ParsedSourceSet;
 import org.jvnet.sorcerer.util.DiagnosticPrinter;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-
 /**
  * Generates source code xref with sorcerer.
- * 
+ *
  * @author Kohsuke Kawaguchi
  */
 public class SorcererGenerator {
-    public void generate(MavenArtifact artifact, File outputDir) throws IOException, InterruptedException {
-        generate(artifact,SourceAndLibs.create(artifact),outputDir);
+    public void generate(Module module, File outputDir) throws IOException, InterruptedException {
+        generate(module,SourceAndLibs.create(module),outputDir);
     }
 
-    public void generate(MavenArtifact artifact, SourceAndLibs sal, File outputDir) throws IOException, InterruptedException {
+    public void generate(Module module, SourceAndLibs sal, File outputDir) throws IOException, InterruptedException {
         Analyzer a = new Analyzer();
 
         a.addSourceFolder(sal.srcDir);
@@ -35,7 +34,7 @@ public class SorcererGenerator {
 
         // TODO: support i18n and use locale for HTML generation
         FrameSetGenerator fsg = new FrameSetGenerator(pss);
-        fsg.setTitle(artifact.getGavId());
+        fsg.setTitle(module.gav);
         fsg.generateAll(outputDir);
     }
 

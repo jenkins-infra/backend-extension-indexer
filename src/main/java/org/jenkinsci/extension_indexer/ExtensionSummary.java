@@ -3,7 +3,6 @@ package org.jenkinsci.extension_indexer;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.extension_indexer.ExtensionPointListGenerator.Family;
-import org.jvnet.hudson.update_center.MavenArtifact;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -21,9 +20,9 @@ import java.util.Map;
  */
 public class ExtensionSummary {
     /**
-     * Back reference to the artifact where this implementation was found.
+     * Back reference to the module where this implementation was found.
      */
-    public final MavenArtifact artifact;
+    public final Module module;
 
     public final String extensionPoint;
 
@@ -57,7 +56,7 @@ public class ExtensionSummary {
     public ExtensionSummary(Family f, Extension e) {
         this.family = f;
         this.isDefinition = e.isDefinition();
-        this.artifact = e.artifact;
+        this.module = e.module;
         this.extensionPoint = e.extensionPoint.getQualifiedName().toString();
         this.implementation = e.implementation!=null ? e.implementation.getQualifiedName().toString() : null;
         this.documentation = e.getDocumentation();
