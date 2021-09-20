@@ -96,7 +96,7 @@ public class SourceAndLibs implements Closeable {
                     if (jf!=null)
                         try {
                             jf.close();
-                        } catch (IOException _) {
+                        } catch (IOException e) {
                         }
                 }
             }

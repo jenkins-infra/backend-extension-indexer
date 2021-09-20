@@ -85,14 +85,14 @@ public class ExtensionPointsExtractor {
                 final TypeElement extensionPoint = elements.getTypeElement("hudson.ExtensionPoint");
                 final TypeElement action = elements.getTypeElement("hudson.model.Action");
 
-                public Void visitClass(ClassTree ct, Void _) {
+                public Void visitClass(ClassTree ct, Void ignored) {
                     TreePath path = getCurrentPath();
                     TypeElement e = (TypeElement) trees.getElement(path);
                     if (e != null) {
                         checkIfExtension(path, e, e);
                         checkIfAction(path, e);
                     }
-                    return super.visitClass(ct, _);
+                    return super.visitClass(ct, ignored);
                 }
 
                 /**
