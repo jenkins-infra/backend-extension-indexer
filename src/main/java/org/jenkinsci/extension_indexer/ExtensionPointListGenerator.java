@@ -250,7 +250,7 @@ public class ExtensionPointListGenerator {
      */
     private void processPlugins(Collection<JSONObject> plugins) throws Exception {
         int availableProcessors = Runtime.getRuntime().availableProcessors();
-        int nThreads = availableProcessors * 2;
+        int nThreads = availableProcessors * 3;
         System.out.printf("Running with %d threads%n", nThreads);
         ExecutorService svc = Executors.newFixedThreadPool(nThreads);
         try {
