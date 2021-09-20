@@ -249,9 +249,12 @@ public class ExtensionPointListGenerator {
      * @param plugins
      */
     private void processPlugins(Collection<JSONObject> plugins) throws Exception {
-        ExecutorService svc = Executors.newFixedThreadPool(1);
+        int availableProcessors = Runtime.getRuntime().availableProcessors();
+        int nThreads = availableProcessors * 3;
+        System.out.printf("Running with %d threads%n", nThreads);
+        ExecutorService svc = Executors.newFixedThreadPool(nThreads);
         try {
-            Set<Future> futures = new HashSet<Future>();
+            Set<Future> futures = new HashSet<>();
             for (final JSONObject plugin : plugins) {
                 final String artifactId = plugin.getString("name");
                 if (!args.isEmpty()) {
