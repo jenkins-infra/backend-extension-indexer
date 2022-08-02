@@ -8,6 +8,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -117,8 +118,8 @@ public class SourceAndLibs implements Closeable {
 
     public static SourceAndLibs create(Module module) throws IOException, InterruptedException {
         final File tempDir = File.createTempFile("jenkins","extPoint");
-        tempDir.delete();
-        tempDir.mkdirs();
+        Files.delete(tempDir.toPath());
+        Files.createDirectories(tempDir.toPath());
 
         File srcdir = new File(tempDir,"src");
         File libdir = new File(tempDir,"lib");
@@ -144,7 +145,7 @@ public class SourceAndLibs implements Closeable {
     }
 
     private static void downloadDependencies(File pomDir, File destDir) throws IOException, InterruptedException {
-        destDir.mkdirs();
+        Files.createDirectories(destDir.toPath());
         String process = "mvn";
         if (System.getenv("M2_HOME") != null) {
             process = System.getenv("M2_HOME") + "/bin/mvn";

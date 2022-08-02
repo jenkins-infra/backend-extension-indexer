@@ -10,6 +10,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -309,7 +310,7 @@ public class ExtensionPointListGenerator {
             value.add(f);
         }
 
-        asciidocOutputDir.mkdirs();
+        Files.createDirectories(asciidocOutputDir.toPath());
 
         try (PrintWriter w = new PrintWriter(new File(asciidocOutputDir, "index.adoc"), "UTF-8")) {
             IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("index-preamble.txt"), "UTF-8"), w);
@@ -338,7 +339,7 @@ public class ExtensionPointListGenerator {
     private void discover(Module m) throws IOException, InterruptedException {
         if (sorcererDir!=null) {
             final File dir = new File(sorcererDir, m.artifactId);
-            dir.mkdirs();
+            Files.createDirectories(dir.toPath());
             sorcererGenerator.generate(m,dir);
         }
 

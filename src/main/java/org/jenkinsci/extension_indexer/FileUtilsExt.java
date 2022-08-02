@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -38,11 +39,11 @@ public final class FileUtilsExt extends org.apache.commons.io.FileUtils {
 
                 if (entry.isDirectory()) {
                     File dir = new File(toDirectory, entry.getName());
-                    dir.mkdirs();
+                    Files.createDirectories(dir.toPath());
                     continue;
                 }
                 File entryFile = new File(toDirectory, entry.getName());
-                entryFile.getParentFile().mkdirs();
+                Files.createDirectories(entryFile.getParentFile().toPath());
                 copyInputStream(zipFile.getInputStream(entry),
                         new BufferedOutputStream(new FileOutputStream(entryFile)));
             }
