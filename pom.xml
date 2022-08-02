@@ -9,7 +9,7 @@
   
   <version>1.0-SNAPSHOT</version>
   <name>Extension Indexer</name>
-  <description>List up extension points and their implementations.</description>
+  <description>List extension points and their implementations.</description>
 
   <properties>
     <spotbugs.excludeFilterFile>${project.basedir}/src/spotbugs/spotbugs-excludes.xml</spotbugs.excludeFilterFile>
