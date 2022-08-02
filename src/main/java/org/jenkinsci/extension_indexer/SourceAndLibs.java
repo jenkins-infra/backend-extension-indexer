@@ -1,5 +1,7 @@
 package org.jenkinsci.extension_indexer;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 
@@ -144,6 +146,7 @@ public class SourceAndLibs implements Closeable {
         };
     }
 
+    @SuppressFBWarnings(value = "COMMAND_INJECTION", justification = "Command injection is not a viable risk here")
     private static void downloadDependencies(File pomDir, File destDir) throws IOException, InterruptedException {
         Files.createDirectories(destDir.toPath());
         String process = "mvn";
