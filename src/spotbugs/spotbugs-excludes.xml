@@ -14,7 +14,6 @@
   <Match>
     <Or>
       <Bug pattern="COMMAND_INJECTION"/>
-      <Bug pattern="DM_DEFAULT_ENCODING"/>
       <Bug pattern="EI_EXPOSE_REP2"/>
       <Bug pattern="EQ_COMPARETO_USE_OBJECT_EQUALS"/>
       <Bug pattern="NM_SAME_SIMPLE_NAME_AS_SUPERCLASS"/>

@@ -190,7 +190,7 @@ public class ExtensionPointListGenerator {
     public JSONObject getJsonUrl(String url) throws MalformedURLException, IOException {
         try (
                 InputStream is = new URL(url).openStream();
-                InputStreamReader isr = new InputStreamReader(is);
+                InputStreamReader isr = new InputStreamReader(is, "UTF-8");
                 BufferedReader bufferedReader = new BufferedReader(isr)
             ) {
             String readLine;
@@ -308,8 +308,8 @@ public class ExtensionPointListGenerator {
 
         asciidocOutputDir.mkdirs();
 
-        try (PrintWriter w = new PrintWriter(new File(asciidocOutputDir, "index.adoc"))) {
-            IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("index-preamble.txt")), w);
+        try (PrintWriter w = new PrintWriter(new File(asciidocOutputDir, "index.adoc"), "UTF-8")) {
+            IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("index-preamble.txt"), "UTF-8"), w);
             for (Entry<Module, List<Family>> e : byModule.entrySet()) {
                 w.println();
                 w.println("* link:" + e.getKey().getUrlName() + "[Extension points defined in " + e.getKey().displayName + "]");
@@ -320,8 +320,8 @@ public class ExtensionPointListGenerator {
             List<Family> fam = e.getValue();
             Module m = e.getKey();
             Collections.sort(fam);
-            try (PrintWriter w = new PrintWriter(new File(asciidocOutputDir, m.getUrlName() + ".adoc"))) {
-                IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("component-preamble.txt")), w);
+            try (PrintWriter w = new PrintWriter(new File(asciidocOutputDir, m.getUrlName() + ".adoc"), "UTF-8")) {
+                IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("component-preamble.txt"), "UTF-8"), w);
                 w.println("# Extension Points defined in " + m.displayName);
                 w.println();
                 w.println(m.getFormattedLink());
