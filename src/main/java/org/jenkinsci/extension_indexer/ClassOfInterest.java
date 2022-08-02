@@ -8,7 +8,7 @@ import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
 import net.sf.json.JSONObject;
 import org.jsoup.Jsoup;
-import org.jsoup.safety.Whitelist;
+import org.jsoup.safety.Safelist;
 
 import javax.lang.model.element.TypeElement;
 import java.io.File;
@@ -136,7 +136,7 @@ public abstract class ClassOfInterest {
             output.append(line).append(' ');
         }
 
-        return Jsoup.clean(output.toString(), Whitelist.basic());
+        return Jsoup.clean(output.toString(), Safelist.basic());
     }
 
     /**
