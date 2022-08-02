@@ -1,5 +1,7 @@
 package org.jenkinsci.extension_indexer;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -88,6 +90,7 @@ public class ExtensionPointListGenerator {
     /**
      * Relationship between definition and implementations of the extension points.
      */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Not worth refactor to hid internal representation")
     public class Family implements Comparable {
         // from definition
         ExtensionSummary definition;
