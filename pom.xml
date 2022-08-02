@@ -103,7 +103,7 @@
   </repositories>
 
   <scm>
-    <connection>scm:git:git://github.com/jenkinsci/backend-extension-indexer.git</connection>
+    <connection>scm:git:https://github.com/jenkinsci/backend-extension-indexer.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/jenkinsci/backend-extension-indexer.git</developerConnection>
   </scm>
 </project>
