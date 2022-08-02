@@ -40,18 +40,11 @@ import java.util.Map;
  */
 @SuppressWarnings({"Since15"})
 public class ExtensionPointsExtractor {
-    /**
-     * Module whose extensions are being scanned.
-     */
-    private Module module;
-
     public List<ClassOfInterest> extract(Module module) throws IOException, InterruptedException {
         return extract(module,SourceAndLibs.create(module));
     }
 
     public List<ClassOfInterest> extract(final Module module, final SourceAndLibs sal) throws IOException, InterruptedException {
-        this.module = module;
-
         StandardJavaFileManager fileManager = null;
         try {
             JavaCompiler javac1 = JavacTool.create();
