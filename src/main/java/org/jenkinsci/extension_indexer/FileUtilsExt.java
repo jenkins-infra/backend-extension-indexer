@@ -18,7 +18,7 @@ import java.util.zip.ZipFile;
  *
  * @author Robert Sandell &lt;robert.sandell@sonyericsson.com&gt;
  */
-public final class FileUtils extends org.apache.commons.io.FileUtils {
+public final class FileUtilsExt extends org.apache.commons.io.FileUtils {
 
     /**
      * Unzips a zip/jar archive into the specified directory.

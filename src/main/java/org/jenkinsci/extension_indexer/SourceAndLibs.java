@@ -44,11 +44,11 @@ public class SourceAndLibs implements Closeable {
     }
 
     public List<File> getClassPath() {
-        return FileUtils.getFileIterator(libDir, "jar");
+        return FileUtilsExt.getFileIterator(libDir, "jar");
     }
 
     public List<File> getSourceFiles() {
-        return FileUtils.getFileIterator(srcDir, "java");
+        return FileUtilsExt.getFileIterator(srcDir, "java");
     }
 
     /**
@@ -126,11 +126,11 @@ public class SourceAndLibs implements Closeable {
         System.out.println("Fetching " + module.getSourcesUrl());
 
         File sourcesJar = File.createTempFile(module.artifactId, "sources");
-        IOUtils.copy(module.getSourcesUrl().openStream(), FileUtils.openOutputStream(sourcesJar));
-        FileUtils.unzip(sourcesJar, srcdir);
+        IOUtils.copy(module.getSourcesUrl().openStream(), FileUtilsExt.openOutputStream(sourcesJar));
+        FileUtilsExt.unzip(sourcesJar, srcdir);
 
         System.out.println("Fetching " + module.getResolvedPomUrl());
-        FileUtils.copyURLToFile(module.getResolvedPomUrl(), new File(srcdir, "pom.xml"));
+        FileUtilsExt.copyURLToFile(module.getResolvedPomUrl(), new File(srcdir, "pom.xml"));
 
         System.out.println("Downloading Dependencies");
         downloadDependencies(srcdir, libdir);
@@ -138,7 +138,7 @@ public class SourceAndLibs implements Closeable {
         return new SourceAndLibs(srcdir, libdir) {
             @Override
             public void close() throws IOException {
-                FileUtils.deleteDirectory(tempDir);
+                FileUtilsExt.deleteDirectory(tempDir);
             }
         };
     }

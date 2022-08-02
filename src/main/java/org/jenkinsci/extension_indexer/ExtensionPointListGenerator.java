@@ -239,7 +239,7 @@ public class ExtensionPointListGenerator {
             container.put("extensionPoints",all);
             container.put("artifacts",artifacts);
 
-            FileUtils.writeStringToFile(jsonFile, container.toString(2));
+            FileUtilsExt.writeStringToFile(jsonFile, container.toString(2));
         }
 
         if (asciidocOutputDir !=null) {
@@ -277,7 +277,7 @@ public class ExtensionPointListGenerator {
                                 discover(addModule(new Module.PluginModule(plugin.getString("gav"), plugin.getString("url"), plugin.getString("title"), plugin.optString("scm"))));
                             }
                             if (pluginsDir!=null) {
-                                FileUtils.copyURLToFile(
+                                FileUtilsExt.copyURLToFile(
                                         new URL(plugin.getString("url")),
                                         new File(pluginsDir, FilenameUtils.getName(plugin.getString("url")))
                                 );
