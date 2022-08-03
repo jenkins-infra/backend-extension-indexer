@@ -17,7 +17,7 @@ node('highmem') {
     }
 
     stage ('Build') {
-        infra.runMaven(["clean", "verify"])
+        infra.runMaven(options: ['clean', 'verify'], jdk: '11')
     }
 
     stage ('Generate') {
