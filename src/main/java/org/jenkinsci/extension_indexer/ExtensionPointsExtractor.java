@@ -7,7 +7,6 @@ import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.api.JavacTool;
-import com.sun.tools.javac.file.ZipFileIndexCache;
 import org.apache.commons.io.FilenameUtils;
 
 import javax.lang.model.element.TypeElement;
@@ -156,11 +155,6 @@ public class ExtensionPointsExtractor {
             if (fileManager!=null)
                 fileManager.close();
             sal.close();
-            try {
-                ZipFileIndexCache.getSharedInstance().clearCache();
-            } catch (NoClassDefFoundError e) {
-                e.printStackTrace();
-            }
         }
     }
 
