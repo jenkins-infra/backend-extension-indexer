@@ -56,9 +56,6 @@ public class ExtensionPointListGenerator {
     @Option(name="-adoc",usage="Generate the extension list index and write it out to the specified directory.")
     public File asciidocOutputDir;
 
-    @Option(name="-sorcerer",usage="Generate sorcerer reports")
-    public File sorcererDir;
-
     @Option(name="-json",usage="Generate extension points, implementatoins, and their relationships in JSON")
     public File jsonFile;
 
@@ -72,7 +69,6 @@ public class ExtensionPointListGenerator {
     public List<String> args = new ArrayList<String>();
 
     private ExtensionPointsExtractor extractor = new ExtensionPointsExtractor();
-    private SorcererGenerator sorcererGenerator = new SorcererGenerator();
 
     private Comparator<ExtensionSummary> IMPLEMENTATION_SORTER = new Comparator<ExtensionSummary>() {
         @Override
@@ -209,8 +205,8 @@ public class ExtensionPointListGenerator {
     public void run() throws Exception {
         JSONObject updateCenterJson = getJsonUrl(updateCenterJsonFile);
 
-        if (asciidocOutputDir ==null && sorcererDir==null && jsonFile==null && pluginsDir ==null)
-            throw new IllegalStateException("Nothing to do. Either -adoc, -json, -sorcerer, or -pipeline is needed");
+        if (asciidocOutputDir ==null && jsonFile==null && pluginsDir ==null)
+            throw new IllegalStateException("Nothing to do. Either -adoc, -json, or -pipeline is needed");
 
         discover(addModule(new Module.CoreModule(updateCenterJson.getJSONObject("core").getString("version"))));
 
@@ -337,12 +333,6 @@ public class ExtensionPointListGenerator {
     }
 
     private void discover(Module m) throws IOException, InterruptedException {
-        if (sorcererDir!=null) {
-            final File dir = new File(sorcererDir, m.artifactId);
-            Files.createDirectories(dir.toPath());
-            sorcererGenerator.generate(m,dir);
-        }
-
         if (asciidocOutputDir !=null || jsonFile!=null) {
             for (ClassOfInterest e : extractor.extract(m)) {
                 synchronized (families) {

@@ -24,7 +24,7 @@ node('highmem') {
         if (infra.isRunningOnJenkinsInfra()) {
             infra.retrieveMavenSettingsFile( "${pwd}/maven-settings.xml")
         }
-        infra.runWithMaven('java -jar target/extension-indexer-*-bin/extension-indexer-*.jar -adoc dist')
+        infra.runWithMaven('java -jar target/extension-indexer-*-bin/extension-indexer-*.jar -adoc dist', '11')
     }
 
     stage('Archive') {
