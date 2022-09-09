@@ -87,7 +87,7 @@ public class ExtensionPointListGenerator {
     /**
      * Relationship between definition and implementations of the extension points.
      */
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Not worth refactor to hid internal representation")
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Not worth refactor to hide internal representation")
     public class Family implements Comparable {
         // from definition
         ExtensionSummary definition;
