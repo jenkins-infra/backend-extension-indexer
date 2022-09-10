@@ -28,9 +28,7 @@ public final class FileUtilsExt extends org.apache.commons.io.FileUtils {
      * @param toDirectory the directory to extract the files to.
      */
     public static void unzip(File file, File toDirectory) throws IOException {
-        ZipFile zipFile = null;
-        try {
-            zipFile = new ZipFile(file);
+        try (ZipFile zipFile = new ZipFile(file)) {
 
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
 
@@ -46,10 +44,6 @@ public final class FileUtilsExt extends org.apache.commons.io.FileUtils {
                 Files.createDirectories(entryFile.getParentFile().toPath());
                 copyInputStream(zipFile.getInputStream(entry),
                         new BufferedOutputStream(new FileOutputStream(entryFile)));
-            }
-        } finally {
-            if (zipFile != null) {
-                zipFile.close();
             }
         }
     }

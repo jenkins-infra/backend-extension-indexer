@@ -81,9 +81,7 @@ public class SourceAndLibs implements Closeable {
         if (allViews==null) {
             allViews = new ArrayList<String>();
             for (File jar : getClassPath()) {
-                JarFile jf = null;
-                try {
-                    jf = new JarFile(jar);
+                try (JarFile jf = new JarFile(jar)) {
                     Enumeration<JarEntry> e = jf.entries();
                     while (e.hasMoreElements()) {
                         JarEntry je = e.nextElement();
@@ -95,12 +93,6 @@ public class SourceAndLibs implements Closeable {
                 } catch (IOException x) {
                     System.err.println("Failed to open "+jar);
                     x.printStackTrace();
-                } finally {
-                    if (jf!=null)
-                        try {
-                            jf.close();
-                        } catch (IOException e) {
-                        }
                 }
             }
         }
