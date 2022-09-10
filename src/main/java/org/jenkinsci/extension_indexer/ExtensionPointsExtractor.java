@@ -58,7 +58,7 @@ public class ExtensionPointsExtractor {
             // Tree symbols created by the original JavacTask.parse() call to be thrown away,
             // which breaks later processing.
             // So for now, don't perform annotation processing
-            List<String> options = Arrays.asList("-proc:none");
+            List<String> options = List.of("-proc:none");
 
             Iterable<? extends JavaFileObject> files = fileManager.getJavaFileObjectsFromFiles(sal.getSourceFiles());
             JavaCompiler.CompilationTask task = javac1.getTask(null, fileManager, errorListener, options, null, files);
