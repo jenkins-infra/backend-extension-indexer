@@ -1,7 +1,6 @@
 package org.jenkinsci.extension_indexer;
 
 import net.sf.json.JSONObject;
-import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.extension_indexer.ExtensionPointListGenerator.Family;
 
 import javax.lang.model.element.Element;
@@ -93,6 +92,6 @@ public class ExtensionSummary {
             return null;
         }
 
-        return StringUtils.join(names, ".");
+        return String.join(".", names);
     }
 }
