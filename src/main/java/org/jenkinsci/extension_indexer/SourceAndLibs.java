@@ -16,7 +16,6 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.jar.JarEntry;
@@ -176,5 +175,5 @@ public class SourceAndLibs implements Closeable {
         }
     }
 
-    private static final Set<String> VIEW_EXTENSIONS = new HashSet<>(Arrays.asList("jelly", "groovy"));
+    private static final Set<String> VIEW_EXTENSIONS = Set.of("jelly", "groovy");
 }
