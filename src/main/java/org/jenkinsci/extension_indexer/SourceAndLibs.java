@@ -119,10 +119,7 @@ public class SourceAndLibs implements Closeable {
     }
 
     public static SourceAndLibs create(Module module) throws IOException, InterruptedException {
-        final File tempDir = File.createTempFile("jenkins","extPoint");
-        Files.delete(tempDir.toPath());
-        Files.createDirectories(tempDir.toPath());
-
+        final File tempDir = Files.createTempDirectory("jenkins-extPoint").toFile();
         File srcdir = new File(tempDir,"src");
         File libdir = new File(tempDir,"lib");
 
