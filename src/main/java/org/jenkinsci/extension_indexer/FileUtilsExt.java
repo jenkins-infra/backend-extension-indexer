@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -18,7 +19,7 @@ import java.util.zip.ZipFile;
  *
  * @author Robert Sandell &lt;robert.sandell@sonyericsson.com&gt;
  */
-public final class FileUtils extends org.apache.commons.io.FileUtils {
+public final class FileUtilsExt extends org.apache.commons.io.FileUtils {
 
     /**
      * Unzips a zip/jar archive into the specified directory.
@@ -38,11 +39,11 @@ public final class FileUtils extends org.apache.commons.io.FileUtils {
 
                 if (entry.isDirectory()) {
                     File dir = new File(toDirectory, entry.getName());
-                    dir.mkdirs();
+                    Files.createDirectories(dir.toPath());
                     continue;
                 }
                 File entryFile = new File(toDirectory, entry.getName());
-                entryFile.getParentFile().mkdirs();
+                Files.createDirectories(entryFile.getParentFile().toPath());
                 copyInputStream(zipFile.getInputStream(entry),
                         new BufferedOutputStream(new FileOutputStream(entryFile)));
             }

@@ -1,5 +1,7 @@
 package org.jenkinsci.extension_indexer;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 
@@ -8,6 +10,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -44,11 +47,11 @@ public class SourceAndLibs implements Closeable {
     }
 
     public List<File> getClassPath() {
-        return FileUtils.getFileIterator(libDir, "jar");
+        return FileUtilsExt.getFileIterator(libDir, "jar");
     }
 
     public List<File> getSourceFiles() {
-        return FileUtils.getFileIterator(srcDir, "java");
+        return FileUtilsExt.getFileIterator(srcDir, "java");
     }
 
     /**
@@ -116,21 +119,18 @@ public class SourceAndLibs implements Closeable {
     }
 
     public static SourceAndLibs create(Module module) throws IOException, InterruptedException {
-        final File tempDir = File.createTempFile("jenkins","extPoint");
-        tempDir.delete();
-        tempDir.mkdirs();
-
+        final File tempDir = Files.createTempDirectory("jenkins-extPoint").toFile();
         File srcdir = new File(tempDir,"src");
         File libdir = new File(tempDir,"lib");
 
         System.out.println("Fetching " + module.getSourcesUrl());
 
         File sourcesJar = File.createTempFile(module.artifactId, "sources");
-        IOUtils.copy(module.getSourcesUrl().openStream(), FileUtils.openOutputStream(sourcesJar));
-        FileUtils.unzip(sourcesJar, srcdir);
+        IOUtils.copy(module.getSourcesUrl().openStream(), FileUtilsExt.openOutputStream(sourcesJar));
+        FileUtilsExt.unzip(sourcesJar, srcdir);
 
         System.out.println("Fetching " + module.getResolvedPomUrl());
-        FileUtils.copyURLToFile(module.getResolvedPomUrl(), new File(srcdir, "pom.xml"));
+        FileUtilsExt.copyURLToFile(module.getResolvedPomUrl(), new File(srcdir, "pom.xml"));
 
         System.out.println("Downloading Dependencies");
         downloadDependencies(srcdir, libdir);
@@ -138,13 +138,14 @@ public class SourceAndLibs implements Closeable {
         return new SourceAndLibs(srcdir, libdir) {
             @Override
             public void close() throws IOException {
-                FileUtils.deleteDirectory(tempDir);
+                FileUtilsExt.deleteDirectory(tempDir);
             }
         };
     }
 
+    @SuppressFBWarnings(value = "COMMAND_INJECTION", justification = "Command injection is not a viable risk here")
     private static void downloadDependencies(File pomDir, File destDir) throws IOException, InterruptedException {
-        destDir.mkdirs();
+        Files.createDirectories(destDir.toPath());
         String process = "mvn";
         if (System.getenv("M2_HOME") != null) {
             process = System.getenv("M2_HOME") + "/bin/mvn";

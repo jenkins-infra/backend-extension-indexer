@@ -1,13 +1,17 @@
 package org.jenkinsci.extension_indexer;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -84,6 +88,7 @@ public class ExtensionPointListGenerator {
     /**
      * Relationship between definition and implementations of the extension points.
      */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Not worth refactor to hide internal representation")
     public class Family implements Comparable {
         // from definition
         ExtensionSummary definition;
@@ -186,7 +191,7 @@ public class ExtensionPointListGenerator {
     public JSONObject getJsonUrl(String url) throws MalformedURLException, IOException {
         try (
                 InputStream is = new URL(url).openStream();
-                InputStreamReader isr = new InputStreamReader(is);
+                InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8);
                 BufferedReader bufferedReader = new BufferedReader(isr)
             ) {
             String readLine;
@@ -232,7 +237,7 @@ public class ExtensionPointListGenerator {
             container.put("extensionPoints",all);
             container.put("artifacts",artifacts);
 
-            FileUtils.writeStringToFile(jsonFile, container.toString(2));
+            FileUtilsExt.writeStringToFile(jsonFile, container.toString(2));
         }
 
         if (asciidocOutputDir !=null) {
@@ -270,7 +275,7 @@ public class ExtensionPointListGenerator {
                                 discover(addModule(new Module.PluginModule(plugin.getString("gav"), plugin.getString("url"), plugin.getString("title"), plugin.optString("scm"))));
                             }
                             if (pluginsDir!=null) {
-                                FileUtils.copyURLToFile(
+                                FileUtilsExt.copyURLToFile(
                                         new URL(plugin.getString("url")),
                                         new File(pluginsDir, FilenameUtils.getName(plugin.getString("url")))
                                 );
@@ -302,10 +307,10 @@ public class ExtensionPointListGenerator {
             value.add(f);
         }
 
-        asciidocOutputDir.mkdirs();
+        Files.createDirectories(asciidocOutputDir.toPath());
 
-        try (PrintWriter w = new PrintWriter(new File(asciidocOutputDir, "index.adoc"))) {
-            IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("index-preamble.txt")), w);
+        try (PrintWriter w = new PrintWriter(new File(asciidocOutputDir, "index.adoc"), StandardCharsets.UTF_8)) {
+            IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("index-preamble.txt"), StandardCharsets.UTF_8), w);
             for (Entry<Module, List<Family>> e : byModule.entrySet()) {
                 w.println();
                 w.println("* link:" + e.getKey().getUrlName() + "[Extension points defined in " + e.getKey().displayName + "]");
@@ -316,8 +321,8 @@ public class ExtensionPointListGenerator {
             List<Family> fam = e.getValue();
             Module m = e.getKey();
             Collections.sort(fam);
-            try (PrintWriter w = new PrintWriter(new File(asciidocOutputDir, m.getUrlName() + ".adoc"))) {
-                IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("component-preamble.txt")), w);
+            try (PrintWriter w = new PrintWriter(new File(asciidocOutputDir, m.getUrlName() + ".adoc"), StandardCharsets.UTF_8)) {
+                IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("component-preamble.txt"), StandardCharsets.UTF_8), w);
                 w.println("# Extension Points defined in " + m.displayName);
                 w.println();
                 w.println(m.getFormattedLink());
