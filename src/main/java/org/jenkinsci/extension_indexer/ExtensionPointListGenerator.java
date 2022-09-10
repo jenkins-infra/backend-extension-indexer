@@ -302,8 +302,7 @@ public class ExtensionPointListGenerator {
             if (f.definition==null)     continue;   // skip undefined extension points
 
             Module key = f.definition.module;
-            List<Family> value = byModule.get(key);
-            if (value==null)    byModule.put(key,value=new ArrayList<>());
+            List<Family> value = byModule.computeIfAbsent(key, unused -> new ArrayList<>());
             value.add(f);
         }
 

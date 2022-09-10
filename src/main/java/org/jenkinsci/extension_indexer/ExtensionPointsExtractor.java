@@ -162,9 +162,7 @@ public class ExtensionPointsExtractor {
                     name = name.substring(0,i);
                 }
 
-                if (views.get(name) == null) {
-                    views.put(name, path);
-                }
+                views.putIfAbsent(name, path);
             } else {
                 //We can't get here as jelly files are always stored inside src root
             }
