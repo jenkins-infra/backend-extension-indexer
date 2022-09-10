@@ -70,14 +70,14 @@ public class ExtensionSummary {
 
     private String findPackageName(TypeElement element) {
         Element parent = element.getEnclosingElement();
-        while (!(parent.getKind().equals(ElementKind.PACKAGE))) {
+        while (!parent.getKind().equals(ElementKind.PACKAGE)) {
             parent = parent.getEnclosingElement();
         }
         return ((PackageElement) parent).getQualifiedName().toString();
     }
 
     private String findTopLevelClassName(Element element) {
-        while (!(element.getEnclosingElement().getKind().equals(ElementKind.PACKAGE))) {
+        while (!element.getEnclosingElement().getKind().equals(ElementKind.PACKAGE)) {
             element = element.getEnclosingElement();
         }
         return element.getSimpleName().toString();
@@ -85,7 +85,7 @@ public class ExtensionSummary {
 
     private String findClassName(Element element) {
         List<String> names = new ArrayList<>();
-        while (!(element.getKind().equals(ElementKind.PACKAGE))) {
+        while (!element.getKind().equals(ElementKind.PACKAGE)) {
             names.add(0, element.getSimpleName().toString());
             element = element.getEnclosingElement();
         }
