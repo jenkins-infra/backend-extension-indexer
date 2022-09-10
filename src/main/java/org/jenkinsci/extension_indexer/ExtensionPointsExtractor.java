@@ -43,7 +43,7 @@ public class ExtensionPointsExtractor {
         return extract(module,SourceAndLibs.create(module));
     }
 
-    public List<ClassOfInterest> extract(final Module module, final SourceAndLibs sal) throws IOException, InterruptedException {
+    public List<ClassOfInterest> extract(final Module module, final SourceAndLibs sal) throws IOException {
         StandardJavaFileManager fileManager = null;
         try {
             JavaCompiler javac1 = JavacTool.create();

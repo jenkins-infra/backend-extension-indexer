@@ -188,7 +188,7 @@ public class ExtensionPointListGenerator {
         app.run();
     }
 
-    public JSONObject getJsonUrl(String url) throws MalformedURLException, IOException {
+    public JSONObject getJsonUrl(String url) throws IOException {
         try (
                 InputStream is = new URL(url).openStream();
                 InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8);
