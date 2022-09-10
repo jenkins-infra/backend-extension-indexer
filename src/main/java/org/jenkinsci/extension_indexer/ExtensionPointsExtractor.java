@@ -74,6 +74,7 @@ public class ExtensionPointsExtractor {
                 final TypeElement extensionPoint = elements.getTypeElement("hudson.ExtensionPoint");
                 final TypeElement action = elements.getTypeElement("hudson.model.Action");
 
+                @Override
                 public Void visitClass(ClassTree ct, Void ignored) {
                     TreePath path = getCurrentPath();
                     TypeElement e = (TypeElement) trees.getElement(path);

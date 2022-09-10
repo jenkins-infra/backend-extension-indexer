@@ -45,6 +45,7 @@ public class SourceAndLibs implements Closeable {
      * Frees any resources allocated for this.
      * In particular, delete the files if they are temporarily extracted.
      */
+    @Override
     public void close() throws IOException {
     }
 

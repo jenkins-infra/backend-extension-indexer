@@ -268,6 +268,7 @@ public class ExtensionPointListGenerator {
                 }
 
                 futures.add(svc.submit(new Runnable() {
+                    @Override
                     public void run() {
                         try {
                             System.out.println(artifactId);
