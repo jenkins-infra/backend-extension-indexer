@@ -174,10 +174,10 @@ public abstract class ClassOfInterest {
         i.put("lineNumber",getLineNumber());
         i.put("hasView", hasView());
         Set<Map<String,String>> vs = new HashSet<>();
-        for(String k:views.keySet()){
+        for (Map.Entry<String, String> entry : views.entrySet()) {
             Map<String,String> v = new HashMap<>();
-            v.put("name", k);
-            v.put("source", views.get(k));
+            v.put("name", entry.getKey());
+            v.put("source", entry.getValue());
             vs.add(v);
         }
         i.put("views",vs);
