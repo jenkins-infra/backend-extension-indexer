@@ -6,7 +6,6 @@ import com.sun.source.util.JavacTask;
 import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
-import com.sun.tools.javac.api.JavacTool;
 import org.apache.commons.io.FilenameUtils;
 
 import javax.lang.model.element.TypeElement;
@@ -20,6 +19,7 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
+import javax.tools.ToolProvider;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -46,7 +46,7 @@ public class ExtensionPointsExtractor {
     public List<ClassOfInterest> extract(final Module module, final SourceAndLibs sal) throws IOException, InterruptedException {
         StandardJavaFileManager fileManager = null;
         try {
-            JavaCompiler javac1 = JavacTool.create();
+            JavaCompiler javac1 = ToolProvider.getSystemJavaCompiler();
             DiagnosticListener<JavaFileObject> errorListener = createErrorListener();
             fileManager = javac1.getStandardFileManager(errorListener, Locale.getDefault(), Charset.defaultCharset());
 
