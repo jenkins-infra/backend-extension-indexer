@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.net.URL;
 import java.nio.file.Files;
@@ -309,8 +310,9 @@ public class ExtensionPointListGenerator {
 
         Files.createDirectories(asciidocOutputDir.toPath());
 
-        try (PrintWriter w = new PrintWriter(new File(asciidocOutputDir, "index.adoc"), StandardCharsets.UTF_8)) {
-            IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("index-preamble.txt"), StandardCharsets.UTF_8), w);
+        try (Reader r = new InputStreamReader(getClass().getResourceAsStream("index-preamble.txt"), StandardCharsets.UTF_8);
+             PrintWriter w = new PrintWriter(new File(asciidocOutputDir, "index.adoc"), StandardCharsets.UTF_8)) {
+            IOUtils.copy(r, w);
             for (Entry<Module, List<Family>> e : byModule.entrySet()) {
                 w.println();
                 w.println("* link:" + e.getKey().getUrlName() + "[Extension points defined in " + e.getKey().displayName + "]");
@@ -321,8 +323,9 @@ public class ExtensionPointListGenerator {
             List<Family> fam = e.getValue();
             Module m = e.getKey();
             Collections.sort(fam);
-            try (PrintWriter w = new PrintWriter(new File(asciidocOutputDir, m.getUrlName() + ".adoc"), StandardCharsets.UTF_8)) {
-                IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("component-preamble.txt"), StandardCharsets.UTF_8), w);
+            try (Reader r = new InputStreamReader(getClass().getResourceAsStream("component-preamble.txt"), StandardCharsets.UTF_8);
+                 PrintWriter w = new PrintWriter(new File(asciidocOutputDir, m.getUrlName() + ".adoc"), StandardCharsets.UTF_8)) {
+                IOUtils.copy(r, w);
                 w.println("# Extension Points defined in " + m.displayName);
                 w.println();
                 w.println(m.getFormattedLink());

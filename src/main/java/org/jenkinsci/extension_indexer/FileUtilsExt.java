@@ -4,6 +4,8 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -42,8 +44,10 @@ public final class FileUtilsExt {
                 }
                 File entryFile = new File(toDirectory, entry.getName());
                 Files.createDirectories(entryFile.getParentFile().toPath());
-                IOUtils.copy(zipFile.getInputStream(entry),
-                        new BufferedOutputStream(new FileOutputStream(entryFile)));
+                try (InputStream is = zipFile.getInputStream(entry);
+                     OutputStream os = new BufferedOutputStream(new FileOutputStream(entryFile))) {
+                    IOUtils.copy(is, os);
+                }
             }
         }
     }
