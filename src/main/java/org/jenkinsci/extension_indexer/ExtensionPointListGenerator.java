@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -190,7 +191,7 @@ public class ExtensionPointListGenerator {
     public JSONObject getJsonUrl(String url) throws MalformedURLException, IOException {
         try (
                 InputStream is = new URL(url).openStream();
-                InputStreamReader isr = new InputStreamReader(is, "UTF-8");
+                InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8);
                 BufferedReader bufferedReader = new BufferedReader(isr)
             ) {
             String readLine;
@@ -308,8 +309,8 @@ public class ExtensionPointListGenerator {
 
         Files.createDirectories(asciidocOutputDir.toPath());
 
-        try (PrintWriter w = new PrintWriter(new File(asciidocOutputDir, "index.adoc"), "UTF-8")) {
-            IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("index-preamble.txt"), "UTF-8"), w);
+        try (PrintWriter w = new PrintWriter(new File(asciidocOutputDir, "index.adoc"), StandardCharsets.UTF_8)) {
+            IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("index-preamble.txt"), StandardCharsets.UTF_8), w);
             for (Entry<Module, List<Family>> e : byModule.entrySet()) {
                 w.println();
                 w.println("* link:" + e.getKey().getUrlName() + "[Extension points defined in " + e.getKey().displayName + "]");
@@ -320,8 +321,8 @@ public class ExtensionPointListGenerator {
             List<Family> fam = e.getValue();
             Module m = e.getKey();
             Collections.sort(fam);
-            try (PrintWriter w = new PrintWriter(new File(asciidocOutputDir, m.getUrlName() + ".adoc"), "UTF-8")) {
-                IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("component-preamble.txt"), "UTF-8"), w);
+            try (PrintWriter w = new PrintWriter(new File(asciidocOutputDir, m.getUrlName() + ".adoc"), StandardCharsets.UTF_8)) {
+                IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("component-preamble.txt"), StandardCharsets.UTF_8), w);
                 w.println("# Extension Points defined in " + m.displayName);
                 w.println();
                 w.println(m.getFormattedLink());
