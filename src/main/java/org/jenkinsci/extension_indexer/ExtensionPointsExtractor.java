@@ -174,11 +174,7 @@ public class ExtensionPointsExtractor {
     }
 
     protected DiagnosticListener<JavaFileObject> createErrorListener() {
-        return new DiagnosticListener<>() {
-            public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-                //TODO report
-                System.out.println(diagnostic);
-            }
-        };
+        //TODO report
+        return System.out::println;
     }
 }
