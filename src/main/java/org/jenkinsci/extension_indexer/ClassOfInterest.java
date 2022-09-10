@@ -173,9 +173,9 @@ public abstract class ClassOfInterest {
         i.put("sourceFile",getSourceFile());
         i.put("lineNumber",getLineNumber());
         i.put("hasView", hasView());
-        Set<Map<String,String>> vs = new HashSet<Map<String, String>>();
+        Set<Map<String,String>> vs = new HashSet<>();
         for(String k:views.keySet()){
-            Map<String,String> v = new HashMap<String, String>();
+            Map<String,String> v = new HashMap<>();
             v.put("name", k);
             v.put("source", views.get(k));
             vs.add(v);

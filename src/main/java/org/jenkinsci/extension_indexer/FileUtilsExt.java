@@ -62,7 +62,7 @@ public final class FileUtilsExt extends org.apache.commons.io.FileUtils {
 
     public static List<File> getFileIterator(File dir, String... extensions) {
         Iterator i = iterateFiles(dir, extensions, true);
-        LinkedList<File> l = new LinkedList<File>();
+        LinkedList<File> l = new LinkedList<>();
         while(i.hasNext()) {
             l.add((File) i.next());
         }

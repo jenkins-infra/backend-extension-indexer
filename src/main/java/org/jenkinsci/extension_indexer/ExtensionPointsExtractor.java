@@ -70,7 +70,7 @@ public class ExtensionPointsExtractor {
             Iterable<? extends CompilationUnitTree> parsed = javac.parse();
             javac.analyze();
 
-            final List<ClassOfInterest> r = new ArrayList<ClassOfInterest>();
+            final List<ClassOfInterest> r = new ArrayList<>();
 
             // discover all compiled types
             TreePathScanner<?,?> classScanner = new TreePathScanner<Void,Void>() {
@@ -124,7 +124,7 @@ public class ExtensionPointsExtractor {
                     if (!(s instanceof NoType))
                         views = collectViews((TypeElement)types.asElement(s));
                     else
-                        views = new HashMap<String, String>();
+                        views = new HashMap<>();
 
                     for (String v : sal.getViewFiles(clazz.getQualifiedName().toString())) {
                         // views defined in subtypes override those defined in the base type
@@ -174,7 +174,7 @@ public class ExtensionPointsExtractor {
     }
 
     protected DiagnosticListener<JavaFileObject> createErrorListener() {
-        return new DiagnosticListener<JavaFileObject>() {
+        return new DiagnosticListener<>() {
             public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
                 //TODO report
                 System.out.println(diagnostic);

@@ -63,7 +63,7 @@ public class SourceAndLibs implements Closeable {
      *      All view files in the qualified form, such as 'foo/bar/abc.groovy'
      */
     public List<String> getViewFiles(String pkg) {
-        List<String> views = new ArrayList<String>();
+        List<String> views = new ArrayList<>();
 
         pkg = pkg.replace('.', '/');
 
@@ -79,7 +79,7 @@ public class SourceAndLibs implements Closeable {
 
         // views from dependencies
         if (allViews==null) {
-            allViews = new ArrayList<String>();
+            allViews = new ArrayList<>();
             for (File jar : getClassPath()) {
                 try (JarFile jf = new JarFile(jar)) {
                     Enumeration<JarEntry> e = jf.entries();
@@ -171,5 +171,5 @@ public class SourceAndLibs implements Closeable {
         }
     }
 
-    private static final Set<String> VIEW_EXTENSIONS = new HashSet<String>(Arrays.asList("jelly", "groovy"));
+    private static final Set<String> VIEW_EXTENSIONS = new HashSet<>(Arrays.asList("jelly", "groovy"));
 }

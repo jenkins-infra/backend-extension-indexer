@@ -48,11 +48,11 @@ public class ExtensionPointListGenerator {
     /**
      * All known {@link Family}s keyed by {@link Family#definition}'s FQCN.
      */
-    private final Map<String,Family> families = new HashMap<String,Family>();
+    private final Map<String,Family> families = new HashMap<>();
     /**
      * All the modules we scanned keyed by its {@link Module#artifact}
      */
-    private final Map<String,Module> modules = Collections.synchronizedMap(new HashMap<String,Module>());
+    private final Map<String,Module> modules = Collections.synchronizedMap(new HashMap<>());
 
     @Option(name="-adoc",usage="Generate the extension list index and write it out to the specified directory.")
     public File asciidocOutputDir;
@@ -67,11 +67,11 @@ public class ExtensionPointListGenerator {
     public String updateCenterJsonFile = "https://updates.jenkins.io/current/update-center.actual.json";
 
     @Argument
-    public List<String> args = new ArrayList<String>();
+    public List<String> args = new ArrayList<>();
 
     private ExtensionPointsExtractor extractor = new ExtensionPointsExtractor();
 
-    private Comparator<ExtensionSummary> IMPLEMENTATION_SORTER = new Comparator<ExtensionSummary>() {
+    private Comparator<ExtensionSummary> IMPLEMENTATION_SORTER = new Comparator<>() {
         @Override
         public int compare(ExtensionSummary o1, ExtensionSummary o2) {
             int moduleOrder = o1.module.compareTo(o2.module);
@@ -303,7 +303,7 @@ public class ExtensionPointListGenerator {
 
             Module key = f.definition.module;
             List<Family> value = byModule.get(key);
-            if (value==null)    byModule.put(key,value=new ArrayList<Family>());
+            if (value==null)    byModule.put(key,value=new ArrayList<>());
             value.add(f);
         }
 
