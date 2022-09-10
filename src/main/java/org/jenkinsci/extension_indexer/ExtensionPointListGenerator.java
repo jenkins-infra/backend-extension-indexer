@@ -28,6 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.kohsuke.args4j.Argument;
@@ -237,7 +238,7 @@ public class ExtensionPointListGenerator {
             container.put("extensionPoints",all);
             container.put("artifacts",artifacts);
 
-            FileUtilsExt.writeStringToFile(jsonFile, container.toString(2));
+            Files.writeString(jsonFile.toPath(), container.toString(2), StandardCharsets.UTF_8);
         }
 
         if (asciidocOutputDir !=null) {
@@ -275,7 +276,7 @@ public class ExtensionPointListGenerator {
                                 discover(addModule(new Module.PluginModule(plugin.getString("gav"), plugin.getString("url"), plugin.getString("title"), plugin.optString("scm"))));
                             }
                             if (pluginsDir!=null) {
-                                FileUtilsExt.copyURLToFile(
+                                FileUtils.copyURLToFile(
                                         new URL(plugin.getString("url")),
                                         new File(pluginsDir, FilenameUtils.getName(plugin.getString("url")))
                                 );

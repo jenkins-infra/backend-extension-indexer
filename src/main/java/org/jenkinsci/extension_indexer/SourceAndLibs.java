@@ -2,6 +2,7 @@ package org.jenkinsci.extension_indexer;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 
@@ -9,6 +10,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -117,11 +120,13 @@ public class SourceAndLibs implements Closeable {
         System.out.println("Fetching " + module.getSourcesUrl());
 
         File sourcesJar = File.createTempFile(module.artifactId, "sources");
-        IOUtils.copy(module.getSourcesUrl().openStream(), FileUtilsExt.openOutputStream(sourcesJar));
+        try (InputStream is = module.getSourcesUrl().openStream(); OutputStream os = Files.newOutputStream(sourcesJar.toPath())) {
+            IOUtils.copy(is, os);
+        }
         FileUtilsExt.unzip(sourcesJar, srcdir);
 
         System.out.println("Fetching " + module.getResolvedPomUrl());
-        FileUtilsExt.copyURLToFile(module.getResolvedPomUrl(), new File(srcdir, "pom.xml"));
+        FileUtils.copyURLToFile(module.getResolvedPomUrl(), new File(srcdir, "pom.xml"));
 
         System.out.println("Downloading Dependencies");
         downloadDependencies(srcdir, libdir);
@@ -129,7 +134,7 @@ public class SourceAndLibs implements Closeable {
         return new SourceAndLibs(srcdir, libdir) {
             @Override
             public void close() throws IOException {
-                FileUtilsExt.deleteDirectory(tempDir);
+                FileUtils.deleteDirectory(tempDir);
             }
         };
     }
