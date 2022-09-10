@@ -35,7 +35,6 @@ import java.util.Map;
  * @author Robert Sandell
  * @author Kohsuke Kawaguchi
  */
-@SuppressWarnings({"Since15"})
 public class ExtensionPointsExtractor {
     public List<ClassOfInterest> extract(Module module) throws IOException, InterruptedException {
         return extract(module,SourceAndLibs.create(module));

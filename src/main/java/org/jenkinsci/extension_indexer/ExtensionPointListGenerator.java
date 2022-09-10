@@ -43,7 +43,6 @@ import net.sf.json.JSONObject;
  *
  * @author Kohsuke Kawaguchi
  */
-@SuppressWarnings("Since15")
 public class ExtensionPointListGenerator {
     /**
      * All known {@link Family}s keyed by {@link Family#definition}'s FQCN.
