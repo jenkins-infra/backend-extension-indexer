@@ -89,7 +89,7 @@ public class ExtensionPointListGenerator {
      * Relationship between definition and implementations of the extension points.
      */
     @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Not worth refactor to hide internal representation")
-    public class Family implements Comparable {
+    public class Family implements Comparable<Family> {
         // from definition
         ExtensionSummary definition;
         private final SortedSet<ExtensionSummary> implementations = new TreeSet<>(IMPLEMENTATION_SORTER);
@@ -171,8 +171,9 @@ public class ExtensionPointListGenerator {
             return m.getFormattedLink();
         }
 
-        public int compareTo(Object that) {
-            return this.getShortName().compareTo(((Family)that).getShortName());
+        @Override
+        public int compareTo(Family that) {
+            return this.getShortName().compareTo(that.getShortName());
         }
     }
 
@@ -255,7 +256,7 @@ public class ExtensionPointListGenerator {
         System.out.printf("Running with %d threads%n", nThreads);
         ExecutorService svc = Executors.newFixedThreadPool(nThreads);
         try {
-            Set<Future> futures = new HashSet<>();
+            Set<Future<?>> futures = new HashSet<>();
             for (final JSONObject plugin : plugins) {
                 final String artifactId = plugin.getString("name");
                 if (!args.isEmpty()) {
@@ -288,7 +289,7 @@ public class ExtensionPointListGenerator {
                     }
                 }));
             }
-            for (Future f : futures) {
+            for (Future<?> f : futures) {
                 f.get();
             }
         } finally {
