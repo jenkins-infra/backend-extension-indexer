@@ -122,7 +122,7 @@ public abstract class ClassOfInterest {
 
             {// replace @link
                 Matcher m = LINK.matcher(line);
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 sb.append("+++");
                 while (m.find()) {
                     String simpleName = m.group(1);
