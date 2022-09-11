@@ -122,7 +122,7 @@ public abstract class ClassOfInterest {
 
             {// replace @link
                 Matcher m = LINK.matcher(line);
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 sb.append("+++");
                 while (m.find()) {
                     String simpleName = m.group(1);
@@ -173,11 +173,11 @@ public abstract class ClassOfInterest {
         i.put("sourceFile",getSourceFile());
         i.put("lineNumber",getLineNumber());
         i.put("hasView", hasView());
-        Set<Map<String,String>> vs = new HashSet<Map<String, String>>();
-        for(String k:views.keySet()){
-            Map<String,String> v = new HashMap<String, String>();
-            v.put("name", k);
-            v.put("source", views.get(k));
+        Set<Map<String,String>> vs = new HashSet<>();
+        for (Map.Entry<String, String> entry : views.entrySet()) {
+            Map<String,String> v = new HashMap<>();
+            v.put("name", entry.getKey());
+            v.put("source", entry.getValue());
             vs.add(v);
         }
         i.put("views",vs);

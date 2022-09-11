@@ -40,6 +40,7 @@ public final class Extension extends ClassOfInterest {
     /**
      * Gets the information captured in this object as JSON.
      */
+    @Override
     public JSONObject toJSON() {
         JSONObject i = super.toJSON();
         if (!isDefinition())

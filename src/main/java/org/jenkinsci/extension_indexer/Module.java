@@ -27,11 +27,11 @@ abstract class Module implements Comparable<Module> {
     /**
      * Extension point or extensions that are found inside this module.
      */
-    final List<ExtensionSummary> extensions = new ArrayList<ExtensionSummary>();
+    final List<ExtensionSummary> extensions = new ArrayList<>();
     /**
      * Actions that are found inside this module.
      */
-    final List<ActionSummary> actions = new ArrayList<ActionSummary>();
+    final List<ActionSummary> actions = new ArrayList<>();
 
     private static final String JENKINS_CORE_URL_NAME = "jenkins-core";
 
@@ -81,7 +81,7 @@ abstract class Module implements Comparable<Module> {
         o.put("url",url);
         o.put("displayName",displayName);
 
-        Set<ExtensionSummary> defs = new HashSet<ExtensionSummary>();
+        Set<ExtensionSummary> defs = new HashSet<>();
 
         JSONArray extensions = new JSONArray();
         JSONArray actions = new JSONArray();

@@ -2,6 +2,7 @@ package org.jenkinsci.extension_indexer;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 
@@ -9,12 +10,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.jar.JarEntry;
@@ -43,6 +44,7 @@ public class SourceAndLibs implements Closeable {
      * Frees any resources allocated for this.
      * In particular, delete the files if they are temporarily extracted.
      */
+    @Override
     public void close() throws IOException {
     }
 
@@ -63,7 +65,7 @@ public class SourceAndLibs implements Closeable {
      *      All view files in the qualified form, such as 'foo/bar/abc.groovy'
      */
     public List<String> getViewFiles(String pkg) {
-        List<String> views = new ArrayList<String>();
+        List<String> views = new ArrayList<>();
 
         pkg = pkg.replace('.', '/');
 
@@ -79,11 +81,9 @@ public class SourceAndLibs implements Closeable {
 
         // views from dependencies
         if (allViews==null) {
-            allViews = new ArrayList<String>();
+            allViews = new ArrayList<>();
             for (File jar : getClassPath()) {
-                JarFile jf = null;
-                try {
-                    jf = new JarFile(jar);
+                try (JarFile jf = new JarFile(jar)) {
                     Enumeration<JarEntry> e = jf.entries();
                     while (e.hasMoreElements()) {
                         JarEntry je = e.nextElement();
@@ -95,12 +95,6 @@ public class SourceAndLibs implements Closeable {
                 } catch (IOException x) {
                     System.err.println("Failed to open "+jar);
                     x.printStackTrace();
-                } finally {
-                    if (jf!=null)
-                        try {
-                            jf.close();
-                        } catch (IOException e) {
-                        }
                 }
             }
         }
@@ -126,11 +120,13 @@ public class SourceAndLibs implements Closeable {
         System.out.println("Fetching " + module.getSourcesUrl());
 
         File sourcesJar = File.createTempFile(module.artifactId, "-sources.jar");
-        IOUtils.copy(module.getSourcesUrl().openStream(), FileUtilsExt.openOutputStream(sourcesJar));
+        try (InputStream is = module.getSourcesUrl().openStream(); OutputStream os = Files.newOutputStream(sourcesJar.toPath())) {
+            IOUtils.copy(is, os);
+        }
         FileUtilsExt.unzip(sourcesJar, srcdir);
 
         System.out.println("Fetching " + module.getResolvedPomUrl());
-        FileUtilsExt.copyURLToFile(module.getResolvedPomUrl(), new File(srcdir, "pom.xml"));
+        FileUtils.copyURLToFile(module.getResolvedPomUrl(), new File(srcdir, "pom.xml"));
 
         System.out.println("Downloading Dependencies");
         downloadDependencies(srcdir, libdir);
@@ -138,7 +134,7 @@ public class SourceAndLibs implements Closeable {
         return new SourceAndLibs(srcdir, libdir) {
             @Override
             public void close() throws IOException {
-                FileUtilsExt.deleteDirectory(tempDir);
+                FileUtils.deleteDirectory(tempDir);
             }
         };
     }
@@ -179,5 +175,5 @@ public class SourceAndLibs implements Closeable {
         }
     }
 
-    private static final Set<String> VIEW_EXTENSIONS = new HashSet<String>(Arrays.asList("jelly", "groovy"));
+    private static final Set<String> VIEW_EXTENSIONS = Set.of("jelly", "groovy");
 }
