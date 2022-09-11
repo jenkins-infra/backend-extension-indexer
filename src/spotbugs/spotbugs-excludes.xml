@@ -17,7 +17,6 @@
       <Bug pattern="NP_NULL_PARAM_DEREF"/>
       <Bug pattern="PATH_TRAVERSAL_IN"/>
       <Bug pattern="URLCONNECTION_SSRF_FD"/>
-      <Bug pattern="WMI_WRONG_MAP_ITERATOR"/>
     </Or>
   </Match>
 </FindBugsFilter>

@@ -8,8 +8,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -29,6 +29,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.kohsuke.args4j.Argument;
@@ -43,16 +44,15 @@ import net.sf.json.JSONObject;
  *
  * @author Kohsuke Kawaguchi
  */
-@SuppressWarnings("Since15")
 public class ExtensionPointListGenerator {
     /**
      * All known {@link Family}s keyed by {@link Family#definition}'s FQCN.
      */
-    private final Map<String,Family> families = new HashMap<String,Family>();
+    private final Map<String,Family> families = new HashMap<>();
     /**
      * All the modules we scanned keyed by its {@link Module#artifact}
      */
-    private final Map<String,Module> modules = Collections.synchronizedMap(new HashMap<String,Module>());
+    private final Map<String,Module> modules = Collections.synchronizedMap(new HashMap<>());
 
     @Option(name="-adoc",usage="Generate the extension list index and write it out to the specified directory.")
     public File asciidocOutputDir;
@@ -67,11 +67,11 @@ public class ExtensionPointListGenerator {
     public String updateCenterJsonFile = "https://updates.jenkins.io/current/update-center.actual.json";
 
     @Argument
-    public List<String> args = new ArrayList<String>();
+    public List<String> args = new ArrayList<>();
 
     private ExtensionPointsExtractor extractor = new ExtensionPointsExtractor();
 
-    private Comparator<ExtensionSummary> IMPLEMENTATION_SORTER = new Comparator<ExtensionSummary>() {
+    private Comparator<ExtensionSummary> IMPLEMENTATION_SORTER = new Comparator<>() {
         @Override
         public int compare(ExtensionSummary o1, ExtensionSummary o2) {
             int moduleOrder = o1.module.compareTo(o2.module);
@@ -89,7 +89,7 @@ public class ExtensionPointListGenerator {
      * Relationship between definition and implementations of the extension points.
      */
     @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "Not worth refactor to hide internal representation")
-    public class Family implements Comparable {
+    public class Family implements Comparable<Family> {
         // from definition
         ExtensionSummary definition;
         private final SortedSet<ExtensionSummary> implementations = new TreeSet<>(IMPLEMENTATION_SORTER);
@@ -171,8 +171,9 @@ public class ExtensionPointListGenerator {
             return m.getFormattedLink();
         }
 
-        public int compareTo(Object that) {
-            return this.getShortName().compareTo(((Family)that).getShortName());
+        @Override
+        public int compareTo(Family that) {
+            return this.getShortName().compareTo(that.getShortName());
         }
     }
 
@@ -188,7 +189,7 @@ public class ExtensionPointListGenerator {
         app.run();
     }
 
-    public JSONObject getJsonUrl(String url) throws MalformedURLException, IOException {
+    public JSONObject getJsonUrl(String url) throws IOException {
         try (
                 InputStream is = new URL(url).openStream();
                 InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8);
@@ -237,7 +238,7 @@ public class ExtensionPointListGenerator {
             container.put("extensionPoints",all);
             container.put("artifacts",artifacts);
 
-            FileUtilsExt.writeStringToFile(jsonFile, container.toString(2));
+            Files.writeString(jsonFile.toPath(), container.toString(2), StandardCharsets.UTF_8);
         }
 
         if (asciidocOutputDir !=null) {
@@ -255,7 +256,7 @@ public class ExtensionPointListGenerator {
         System.out.printf("Running with %d threads%n", nThreads);
         ExecutorService svc = Executors.newFixedThreadPool(nThreads);
         try {
-            Set<Future> futures = new HashSet<>();
+            Set<Future<?>> futures = new HashSet<>();
             for (final JSONObject plugin : plugins) {
                 final String artifactId = plugin.getString("name");
                 if (!args.isEmpty()) {
@@ -268,6 +269,7 @@ public class ExtensionPointListGenerator {
                 }
 
                 futures.add(svc.submit(new Runnable() {
+                    @Override
                     public void run() {
                         try {
                             System.out.println(artifactId);
@@ -275,7 +277,7 @@ public class ExtensionPointListGenerator {
                                 discover(addModule(new Module.PluginModule(plugin.getString("gav"), plugin.getString("url"), plugin.getString("title"), plugin.optString("scm"))));
                             }
                             if (pluginsDir!=null) {
-                                FileUtilsExt.copyURLToFile(
+                                FileUtils.copyURLToFile(
                                         new URL(plugin.getString("url")),
                                         new File(pluginsDir, FilenameUtils.getName(plugin.getString("url")))
                                 );
@@ -288,7 +290,7 @@ public class ExtensionPointListGenerator {
                     }
                 }));
             }
-            for (Future f : futures) {
+            for (Future<?> f : futures) {
                 f.get();
             }
         } finally {
@@ -302,15 +304,15 @@ public class ExtensionPointListGenerator {
             if (f.definition==null)     continue;   // skip undefined extension points
 
             Module key = f.definition.module;
-            List<Family> value = byModule.get(key);
-            if (value==null)    byModule.put(key,value=new ArrayList<Family>());
+            List<Family> value = byModule.computeIfAbsent(key, unused -> new ArrayList<>());
             value.add(f);
         }
 
         Files.createDirectories(asciidocOutputDir.toPath());
 
-        try (PrintWriter w = new PrintWriter(new File(asciidocOutputDir, "index.adoc"), StandardCharsets.UTF_8)) {
-            IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("index-preamble.txt"), StandardCharsets.UTF_8), w);
+        try (Reader r = new InputStreamReader(getClass().getResourceAsStream("index-preamble.txt"), StandardCharsets.UTF_8);
+             PrintWriter w = new PrintWriter(new File(asciidocOutputDir, "index.adoc"), StandardCharsets.UTF_8)) {
+            IOUtils.copy(r, w);
             for (Entry<Module, List<Family>> e : byModule.entrySet()) {
                 w.println();
                 w.println("* link:" + e.getKey().getUrlName() + "[Extension points defined in " + e.getKey().displayName + "]");
@@ -321,8 +323,9 @@ public class ExtensionPointListGenerator {
             List<Family> fam = e.getValue();
             Module m = e.getKey();
             Collections.sort(fam);
-            try (PrintWriter w = new PrintWriter(new File(asciidocOutputDir, m.getUrlName() + ".adoc"), StandardCharsets.UTF_8)) {
-                IOUtils.copy(new InputStreamReader(getClass().getResourceAsStream("component-preamble.txt"), StandardCharsets.UTF_8), w);
+            try (Reader r = new InputStreamReader(getClass().getResourceAsStream("component-preamble.txt"), StandardCharsets.UTF_8);
+                 PrintWriter w = new PrintWriter(new File(asciidocOutputDir, m.getUrlName() + ".adoc"), StandardCharsets.UTF_8)) {
+                IOUtils.copy(r, w);
                 w.println("# Extension Points defined in " + m.displayName);
                 w.println();
                 w.println(m.getFormattedLink());

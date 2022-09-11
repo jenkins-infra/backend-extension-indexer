@@ -14,7 +14,6 @@ import javax.lang.model.type.NoType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
-import javax.tools.Diagnostic;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
@@ -24,7 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -37,13 +35,12 @@ import java.util.Map;
  * @author Robert Sandell
  * @author Kohsuke Kawaguchi
  */
-@SuppressWarnings({"Since15"})
 public class ExtensionPointsExtractor {
     public List<ClassOfInterest> extract(Module module) throws IOException, InterruptedException {
         return extract(module,SourceAndLibs.create(module));
     }
 
-    public List<ClassOfInterest> extract(final Module module, final SourceAndLibs sal) throws IOException, InterruptedException {
+    public List<ClassOfInterest> extract(final Module module, final SourceAndLibs sal) throws IOException {
         StandardJavaFileManager fileManager = null;
         try {
             JavaCompiler javac1 = JavacTool.create();
@@ -58,7 +55,7 @@ public class ExtensionPointsExtractor {
             // Tree symbols created by the original JavacTask.parse() call to be thrown away,
             // which breaks later processing.
             // So for now, don't perform annotation processing
-            List<String> options = Arrays.asList("-proc:none");
+            List<String> options = List.of("-proc:none");
 
             Iterable<? extends JavaFileObject> files = fileManager.getJavaFileObjectsFromFiles(sal.getSourceFiles());
             JavaCompiler.CompilationTask task = javac1.getTask(null, fileManager, errorListener, options, null, files);
@@ -70,13 +67,14 @@ public class ExtensionPointsExtractor {
             Iterable<? extends CompilationUnitTree> parsed = javac.parse();
             javac.analyze();
 
-            final List<ClassOfInterest> r = new ArrayList<ClassOfInterest>();
+            final List<ClassOfInterest> r = new ArrayList<>();
 
             // discover all compiled types
             TreePathScanner<?,?> classScanner = new TreePathScanner<Void,Void>() {
                 final TypeElement extensionPoint = elements.getTypeElement("hudson.ExtensionPoint");
                 final TypeElement action = elements.getTypeElement("hudson.model.Action");
 
+                @Override
                 public Void visitClass(ClassTree ct, Void ignored) {
                     TreePath path = getCurrentPath();
                     TypeElement e = (TypeElement) trees.getElement(path);
@@ -124,7 +122,7 @@ public class ExtensionPointsExtractor {
                     if (!(s instanceof NoType))
                         views = collectViews((TypeElement)types.asElement(s));
                     else
-                        views = new HashMap<String, String>();
+                        views = new HashMap<>();
 
                     for (String v : sal.getViewFiles(clazz.getQualifiedName().toString())) {
                         // views defined in subtypes override those defined in the base type
@@ -164,9 +162,7 @@ public class ExtensionPointsExtractor {
                     name = name.substring(0,i);
                 }
 
-                if (views.get(name) == null) {
-                    views.put(name, path);
-                }
+                views.putIfAbsent(name, path);
             } else {
                 //We can't get here as jelly files are always stored inside src root
             }
@@ -174,11 +170,7 @@ public class ExtensionPointsExtractor {
     }
 
     protected DiagnosticListener<JavaFileObject> createErrorListener() {
-        return new DiagnosticListener<JavaFileObject>() {
-            public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-                //TODO report
-                System.out.println(diagnostic);
-            }
-        };
+        //TODO report
+        return System.out::println;
     }
 }
