@@ -22,22 +22,6 @@
 
   <build>
     <plugins>
-      <!-- TODO migrate from private jdk.compiler API to public java.compiler API -->
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <source>11</source>
-          <target>11</target>
-          <testSource>11</testSource>
-          <testTarget>11</testTarget>
-          <release combine.self="override" />
-          <testRelease combine.self="override" />
-          <compilerArgs>
-            <arg>--add-exports</arg>
-            <arg>jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
-          </compilerArgs>
-        </configuration>
-      </plugin>
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
