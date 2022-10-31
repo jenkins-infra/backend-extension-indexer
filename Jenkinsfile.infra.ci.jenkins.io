@@ -28,7 +28,7 @@ node('linux-amd64') {
     }
 
     stage ('Publish') {
-        zip dir: './dist', glob: '**', zipFile: 'extension-indexer.zip'
+        sh 'zip -r extension-indexer.zip ./dist'
         if(env.BRANCH_IS_PRIMARY) {
             infra.publishReports(['extension-indexer.zip'])
         } else {
