@@ -28,7 +28,8 @@ node('linux-amd64') {
     }
 
     stage ('Publish') {
-        sh 'zip -r extension-indexer.zip ./dist'
+        // extension-indexer must not include directory name in their zip files
+        sh 'cd dist && zip -r -1 -q ../extension-indexer.zip .'
         if(env.BRANCH_IS_PRIMARY) {
             infra.publishReports(['extension-indexer.zip'])
         } else {
