@@ -10,7 +10,7 @@ properties([
         ])
 ])
 
-node('highmem') {
+node('linux-amd64') {
     stage ('Prepare') {
         deleteDir()
         checkout scm
@@ -27,9 +27,14 @@ node('highmem') {
         infra.runWithMaven('java -jar target/extension-indexer-*-bin/extension-indexer-*.jar -adoc dist', '11')
     }
 
-    stage('Archive') {
-        dir ('dist') {
-            archiveArtifacts '**'
+    stage ('Publish') {
+        // extension-indexer must not include directory name in their zip files
+        sh 'cd dist && zip -r -1 -q ../extension-indexer.zip .'
+        if(env.BRANCH_IS_PRIMARY && infra.isInfra()) {
+            infra.publishReports(['extension-indexer.zip'])
+        } else {
+            // On branches and PR, archive the files (there is a buildDiscarder to clean it up) so contributors will be able to check changes
+            archiveArtifacts artifacts: 'extension-indexer.zip'
         }
     }
 }
