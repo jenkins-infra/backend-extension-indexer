@@ -35,6 +35,16 @@ abstract class Module implements Comparable<Module> {
 
     private static final String JENKINS_CORE_URL_NAME = "jenkins-core";
 
+    private static String repositoryOrigin = "";
+
+    public static String getRepositoryOrigin() {
+        if (repositoryOrigin.isEmpty()){
+            // Retrieve the env var containing the artifact caching proxy origin
+            // or use the default https://repo.jenkins-ci.org origin
+            repositoryOrigin = (System.getenv("ARTIFACT_CACHING_PROXY_ORIGIN") != null) ? System.getenv("ARTIFACT_CACHING_PROXY_ORIGIN") : "https://repo.jenkins-ci.org";
+        }
+        return repositoryOrigin;
+    }
 
     protected Module(String gav, String url, String displayName) {
         this.gav = gav;
@@ -68,11 +78,11 @@ abstract class Module implements Comparable<Module> {
     abstract String getUrlName();
 
     public URL getSourcesUrl() throws MalformedURLException {
-        return new URL("https://repo.jenkins-ci.org/releases/" + group.replaceAll("\\.", "/") + "/" + artifactId + "/" + version + "/" + artifactId + "-" + version + "-sources.jar");
+        return new URL(getRepositoryOrigin() + "/releases/" + group.replaceAll("\\.", "/") + "/" + artifactId + "/" + version + "/" + artifactId + "-" + version + "-sources.jar");
     }
 
     public URL getResolvedPomUrl() throws MalformedURLException {
-        return new URL("https://repo.jenkins-ci.org/releases/" + group.replaceAll("\\.", "/") + "/" + artifactId + "/" + version + "/" + artifactId + "-" + version + ".pom");
+        return new URL(getRepositoryOrigin() + "/releases/" + group.replaceAll("\\.", "/") + "/" + artifactId + "/" + version + "/" + artifactId + "-" + version + ".pom");
     }
 
     JSONObject toJSON() {
