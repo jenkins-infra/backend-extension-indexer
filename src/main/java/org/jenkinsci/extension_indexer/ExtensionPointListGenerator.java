@@ -259,13 +259,8 @@ public class ExtensionPointListGenerator {
             Set<Future<?>> futures = new HashSet<>();
             for (final JSONObject plugin : plugins) {
                 final String artifactId = plugin.getString("name");
-                if (!args.isEmpty()) {
-                    if (!args.contains(artifactId))
-                        continue;   // skip
-                } else if ("python-wrapper".equals(artifactId)) {
-                    // python-wrapper does not have extension points but just wrappers to help python plugins use extension points
-                    // see https://issues.jenkins-ci.org/browse/INFRA-516
-                    continue;   // skip them to remove noise
+                if (!args.isEmpty() && !args.contains(artifactId)) {
+                    continue;   // skip
                 }
 
                 futures.add(svc.submit(new Runnable() {
