@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,6 +21,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.Base64;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.MalformedURLException;
 
 /**
  * Extracted source files and dependency jar files for a Maven project.
@@ -112,6 +117,33 @@ public class SourceAndLibs implements Closeable {
         return views;
     }
 
+    private static byte[] auth;
+
+    // Retrieve the auth from the artifact caching proxy Maven settings file
+    private static byte[] getAuth() {
+        if (auth == null && System.getenv("ARTIFACT_CACHING_PROXY_USERNAME") != null && System.getenv("ARTIFACT_CACHING_PROXY_PASSWORD") != null) {
+            try {
+                auth = Base64.getEncoder().encode((System.getenv("ARTIFACT_CACHING_PROXY_USERNAME") + ':' + System.getenv("ARTIFACT_CACHING_PROXY_PASSWORD")).getBytes("UTF-8"));
+            } catch(UnsupportedEncodingException uee) {
+                uee.printStackTrace();
+            }
+        }
+        return auth;
+    }
+
+    private static URLConnection getURLConnection(URL url) throws MalformedURLException, IOException {
+        String urlString = url.toString();
+        URLConnection conn = new URL(urlString).openConnection();
+        // If we're querying one of the artifact caching proxies we need to add authentication
+        if (!urlString.startsWith("https://repo.jenkins-ci.org")) {
+            conn.setRequestProperty("Accept-Charset", "UTF-8");
+            conn.setRequestProperty("Accept-Encoding", "identity");
+            conn.setRequestProperty("User-Agent", "backend-extension-indexer/0.1");
+            conn.setRequestProperty("Authorization", "Basic " + new String(getAuth(), "UTF-8"));
+        }
+        return conn;
+    }
+
     public static SourceAndLibs create(Module module) throws IOException, InterruptedException {
         final File tempDir = Files.createTempDirectory("jenkins-extPoint").toFile();
         File srcdir = new File(tempDir,"src");
@@ -120,13 +152,15 @@ public class SourceAndLibs implements Closeable {
         System.out.println("Fetching " + module.getSourcesUrl());
 
         File sourcesJar = File.createTempFile(module.artifactId, "-sources.jar");
-        try (InputStream is = module.getSourcesUrl().openStream(); OutputStream os = Files.newOutputStream(sourcesJar.toPath())) {
+        try (InputStream is = getURLConnection(module.getSourcesUrl()).getInputStream(); OutputStream os = Files.newOutputStream(sourcesJar.toPath())) {
             IOUtils.copy(is, os);
         }
         FileUtilsExt.unzip(sourcesJar, srcdir);
 
         System.out.println("Fetching " + module.getResolvedPomUrl());
-        FileUtils.copyURLToFile(module.getResolvedPomUrl(), new File(srcdir, "pom.xml"));
+        try (InputStream is = getURLConnection(module.getResolvedPomUrl()).getInputStream(); OutputStream os = Files.newOutputStream(new File(srcdir, "pom.xml").toPath())) {
+            IOUtils.copy(is, os);
+        }
 
         System.out.println("Downloading Dependencies");
         downloadDependencies(srcdir, libdir);
@@ -148,7 +182,7 @@ public class SourceAndLibs implements Closeable {
         }
         List<String> command = new ArrayList<>();
         command.add(process);
-        command.addAll(Arrays.asList("--settings", new File("maven-settings.xml").getAbsolutePath()));
+        command.addAll(Arrays.asList("--settings", (System.getenv("MAVEN_SETTINGS") != null) ? System.getenv("MAVEN_SETTINGS") : new File("maven-settings.xml").getAbsolutePath()));
         command.addAll(Arrays.asList("--update-snapshots",
                 "--batch-mode",
                 "dependency:copy-dependencies",
