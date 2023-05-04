@@ -47,8 +47,8 @@ public class ExtensionSummary {
     public final boolean isDefinition;
 
     /**
-     * Family that this extension belongs to. Eithe {@link Family#definition} is 'this'
-     * or {@link Family#implementations} includes 'this'
+     * Family that this extension belongs to. Either {@link Family#definition} is 'this'
+     * or {@code Family#implementations} includes 'this'
      */
     public final Family family;
 

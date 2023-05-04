@@ -50,7 +50,7 @@ public class ExtensionPointListGenerator {
      */
     private final Map<String,Family> families = new HashMap<>();
     /**
-     * All the modules we scanned keyed by its {@link Module#artifact}
+     * All the modules we scanned keyed by its {@link Module#artifactId}
      */
     private final Map<String,Module> modules = Collections.synchronizedMap(new HashMap<>());
 
