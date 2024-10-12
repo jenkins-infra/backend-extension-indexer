@@ -1,9 +1,40 @@
 <settings>
+  <activeProfiles>
+    <activeProfile>jenkins</activeProfile>
+  </activeProfiles>
+  <profiles>
+    <profile>
+      <id>jenkins</id>
+      <repositories>
+        <repository>
+          <id>jenkins-public</id>
+          <url>https://repo.jenkins-ci.org/public/</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <id>jenkins-public</id>
+          <url>https://repo.jenkins-ci.org/public/</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+  </profiles>
   <mirrors>
     <mirror>
-      <id>repo.jenkins-ci.org</id>
-      <url>https://repo.jenkins-ci.org/public/</url>
-      <mirrorOf>*</mirrorOf>
+      <id>repo.j.o-mirror</id>
+      <mirrorOf>repo.jenkins-ci.org</mirrorOf>
+      <url>https://repo.jenkine-ci.org/public/</url>
+    </mirror>
+    <mirror>
+      <id>m.g.o-public-repo1</id>
+      <mirrorOf>m.g.o-public</mirrorOf>
+      <url>https://repo.maven.apache.org/maven2/</url>
     </mirror>
   </mirrors>
 </settings>
