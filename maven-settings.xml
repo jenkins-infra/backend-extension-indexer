@@ -7,8 +7,8 @@
       <id>jenkins</id>
       <repositories>
         <repository>
-          <id>jenkins-releases</id>
-          <url>https://repo.jenkins-ci.org/releases/</url>
+          <id>jenkins-public</id>
+          <url>https://repo.jenkins-ci.org/public/</url>
           <releases>
             <enabled>true</enabled>
           </releases>
@@ -16,8 +16,8 @@
       </repositories>
       <pluginRepositories>
         <pluginRepository>
-          <id>jenkins-releases</id>
-          <url>https://repo.jenkins-ci.org/releases/</url>
+          <id>jenkins-public</id>
+          <url>https://repo.jenkins-ci.org/public/</url>
           <releases>
             <enabled>true</enabled>
           </releases>
@@ -25,4 +25,16 @@
       </pluginRepositories>
     </profile>
   </profiles>
+  <mirrors>
+    <mirror>
+      <id>repo.j.o-mirror</id>
+      <mirrorOf>repo.jenkins-ci.org</mirrorOf>
+      <url>https://repo.jenkine-ci.org/public/</url>
+    </mirror>
+    <mirror>
+      <id>m.g.o-public-repo1</id>
+      <mirrorOf>m.g.o-public</mirrorOf>
+      <url>https://repo.maven.apache.org/maven2/</url>
+    </mirror>
+  </mirrors>
 </settings>

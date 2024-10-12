@@ -185,8 +185,8 @@ public class SourceAndLibs implements Closeable {
         command.addAll(Arrays.asList("--settings", (System.getenv("MAVEN_SETTINGS") != null) ? System.getenv("MAVEN_SETTINGS") : new File("maven-settings.xml").getAbsolutePath()));
         command.addAll(Arrays.asList("--update-snapshots",
                 "--batch-mode",
-                "dependency:copy-dependencies",
-                "dependency:copy",
+                "org.apache.maven.plugins:maven-dependency-plugin:3.8.0:copy-dependencies",
+                "org.apache.maven.plugins:maven-dependency-plugin:3.8.0:copy",
                 "-Dartifact=org.jenkins-ci.main:jenkins-core:2.480",
                 "-DincludeScope=compile",
                 "-DoutputDirectory=" + destDir.getAbsolutePath()));
