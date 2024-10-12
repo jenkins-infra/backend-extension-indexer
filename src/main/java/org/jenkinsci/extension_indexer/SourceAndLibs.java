@@ -187,7 +187,7 @@ public class SourceAndLibs implements Closeable {
                 "--batch-mode",
                 "org.apache.maven.plugins:maven-dependency-plugin:3.8.0:copy-dependencies",
                 "org.apache.maven.plugins:maven-dependency-plugin:3.8.0:copy",
-                "-Dartifact=org.jenkins-ci.main:jenkins-core:2.480",
+                "-Dartifact=org.jenkins-ci.main:jenkins-core:2.479",
                 "-DincludeScope=compile",
                 "-DoutputDirectory=" + destDir.getAbsolutePath()));
 
