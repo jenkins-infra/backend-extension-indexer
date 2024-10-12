@@ -10,6 +10,8 @@ properties([
         ])
 ])
 
+def javaVersion = '17'
+
 node('linux-amd64') {
     stage ('Prepare') {
         deleteDir()
@@ -17,7 +19,7 @@ node('linux-amd64') {
     }
 
     stage ('Build') {
-        infra.runMaven(["clean", "verify"], '11')
+        infra.runMaven(["clean", "verify"], javaVersion)
     }
 
     stage ('Generate') {
@@ -25,14 +27,7 @@ node('linux-amd64') {
         // tmp folder, and set MAVEN_SETTINGS env var to its absolute
         // location
         infra.withArtifactCachingProxy {
-            repositoryOrigin = "https://repo." + (env.ARTIFACT_CACHING_PROXY_PROVIDER ?: 'azure') + ".jenkins.io"
-            withEnv(["ARTIFACT_CACHING_PROXY_ORIGIN=$repositoryOrigin"]) {
-                withCredentials([usernamePassword(credentialsId: 'artifact-caching-proxy-credentials',
-                                 usernameVariable: 'ARTIFACT_CACHING_PROXY_USERNAME',
-                                 passwordVariable: 'ARTIFACT_CACHING_PROXY_PASSWORD')]) {
-                    infra.runWithMaven('java -jar target/extension-indexer-*-bin/extension-indexer-*.jar -adoc dist', '11')
-                }
-            }
+            infra.runWithMaven('java -jar target/extension-indexer-*-bin/extension-indexer-*.jar -adoc dist', javaVersion)
         }
     }
 
