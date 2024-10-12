@@ -1,9 +1,28 @@
 <settings>
-  <mirrors>
-    <mirror>
-      <id>repo.jenkins-ci.org</id>
-      <url>https://repo.jenkins-ci.org/public/</url>
-      <mirrorOf>*</mirrorOf>
-    </mirror>
-  </mirrors>
+  <activeProfiles>
+    <activeProfile>jenkins</activeProfile>
+  </activeProfiles>
+  <profiles>
+    <profile>
+      <id>jenkins</id>
+      <repositories>
+        <repository>
+          <id>jenkins-releases</id>
+          <url>https://repo.jenkins-ci.org/releases/</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <id>jenkins-releases</id>
+          <url>https://repo.jenkins-ci.org/releases/</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+  </profiles>
 </settings>

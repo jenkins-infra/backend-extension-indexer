@@ -186,6 +186,8 @@ public class SourceAndLibs implements Closeable {
         command.addAll(Arrays.asList("--update-snapshots",
                 "--batch-mode",
                 "dependency:copy-dependencies",
+                "dependency:copy",
+                "-Dartifact=org.jenkins-ci.main:jenkins-core:2.480",
                 "-DincludeScope=compile",
                 "-DoutputDirectory=" + destDir.getAbsolutePath()));
 
