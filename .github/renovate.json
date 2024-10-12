@@ -9,6 +9,13 @@
   "labels": [
     "dependencies"
   ],
+  "packageRules": [
+    {
+      "matchPackageNames": ["org.jenkins-ci.main:jenkins-core"],
+      "description": ["Needed for regex manager which doesn't extract the registry url like other dependencies"],
+      "registryUrls": ["https://repo.jenkins-ci.org/releases/"]
+    }
+  ],
   "customManagers": [
     {
       "customType": "regex",
