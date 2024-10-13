@@ -144,7 +144,7 @@ public class SourceAndLibs implements Closeable {
         return conn;
     }
 
-    public static SourceAndLibs create(Module module) throws IOException, InterruptedException {
+    public static SourceAndLibs create(Module module, Module.CoreModule core) throws IOException, InterruptedException {
         final File tempDir = Files.createTempDirectory("jenkins-extPoint").toFile();
         File srcdir = new File(tempDir,"src");
         File libdir = new File(tempDir,"lib");
@@ -163,7 +163,7 @@ public class SourceAndLibs implements Closeable {
         }
 
         System.out.println("Downloading Dependencies");
-        downloadDependencies(srcdir, libdir);
+        downloadDependencies(srcdir, libdir, core);
 
         return new SourceAndLibs(srcdir, libdir) {
             @Override
@@ -174,7 +174,7 @@ public class SourceAndLibs implements Closeable {
     }
 
     @SuppressFBWarnings(value = "COMMAND_INJECTION", justification = "Command injection is not a viable risk here")
-    private static void downloadDependencies(File pomDir, File destDir) throws IOException, InterruptedException {
+    private static void downloadDependencies(File pomDir, File destDir, Module.CoreModule core) throws IOException, InterruptedException {
         Files.createDirectories(destDir.toPath());
         String process = "mvn";
         if (System.getenv("M2_HOME") != null) {
@@ -183,9 +183,12 @@ public class SourceAndLibs implements Closeable {
         List<String> command = new ArrayList<>();
         command.add(process);
         command.addAll(Arrays.asList("--settings", (System.getenv("MAVEN_SETTINGS") != null) ? System.getenv("MAVEN_SETTINGS") : new File("maven-settings.xml").getAbsolutePath()));
+
         command.addAll(Arrays.asList("--update-snapshots",
                 "--batch-mode",
-                "dependency:copy-dependencies",
+                "org.apache.maven.plugins:maven-dependency-plugin:3.8.0:copy-dependencies",
+                "org.apache.maven.plugins:maven-dependency-plugin:3.8.0:copy",
+                "-Dartifact=" + core.gav,
                 "-DincludeScope=compile",
                 "-DoutputDirectory=" + destDir.getAbsolutePath()));
 

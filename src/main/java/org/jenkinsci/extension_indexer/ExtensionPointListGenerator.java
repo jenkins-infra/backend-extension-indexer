@@ -210,9 +210,10 @@ public class ExtensionPointListGenerator {
         if (asciidocOutputDir ==null && jsonFile==null && pluginsDir ==null)
             throw new IllegalStateException("Nothing to do. Either -adoc, -json, or -pipeline is needed");
 
-        discover(addModule(new Module.CoreModule(updateCenterJson.getJSONObject("core").getString("version"))));
+        Module.CoreModule coreModule = new Module.CoreModule(updateCenterJson.getJSONObject("core").getString("version"));
+        discover(addModule(coreModule), coreModule);
 
-        processPlugins(updateCenterJson.getJSONObject("plugins").values());
+        processPlugins(updateCenterJson.getJSONObject("plugins").values(), coreModule);
 
         if (jsonFile!=null) {
             JSONObject all = new JSONObject();
@@ -247,10 +248,10 @@ public class ExtensionPointListGenerator {
     }
 
     /**
-     * Walks over the plugins, record {@link #modules} and call {@link #discover(Module)}.
+     * Walks over the plugins, record {@link #modules} and call {@link #discover(Module, Module.CoreModule)}.
      * @param plugins
      */
-    private void processPlugins(Collection<JSONObject> plugins) throws Exception {
+    private void processPlugins(Collection<JSONObject> plugins, Module.CoreModule core) throws Exception {
         int availableProcessors = Runtime.getRuntime().availableProcessors();
         int nThreads = availableProcessors * 3;
         System.out.printf("Running with %d threads%n", nThreads);
@@ -269,7 +270,8 @@ public class ExtensionPointListGenerator {
                         try {
                             System.out.println(artifactId);
                             if (asciidocOutputDir !=null || jsonFile!=null) {
-                                discover(addModule(new Module.PluginModule(plugin.getString("gav"), plugin.getString("url"), plugin.getString("title"), plugin.optString("scm"))));
+                                Module pluginModule = addModule(new Module.PluginModule(plugin.getString("gav"), plugin.getString("url"), plugin.getString("title"), plugin.optString("scm")));
+                                discover(pluginModule, core);
                             }
                             if (pluginsDir!=null) {
                                 FileUtils.copyURLToFile(
@@ -331,9 +333,9 @@ public class ExtensionPointListGenerator {
         }
     }
 
-    private void discover(Module m) throws IOException, InterruptedException {
+    private void discover(Module m, Module.CoreModule core) throws IOException, InterruptedException {
         if (asciidocOutputDir !=null || jsonFile!=null) {
-            for (ClassOfInterest e : extractor.extract(m)) {
+            for (ClassOfInterest e : extractor.extract(m, core)) {
                 synchronized (families) {
                     System.out.println("Found "+e);
 

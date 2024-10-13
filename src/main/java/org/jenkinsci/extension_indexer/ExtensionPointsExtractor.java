@@ -36,8 +36,8 @@ import java.util.Map;
  * @author Kohsuke Kawaguchi
  */
 public class ExtensionPointsExtractor {
-    public List<ClassOfInterest> extract(Module module) throws IOException, InterruptedException {
-        return extract(module,SourceAndLibs.create(module));
+    public List<ClassOfInterest> extract(Module module, Module.CoreModule core) throws IOException, InterruptedException {
+        return extract(module,SourceAndLibs.create(module, core));
     }
 
     public List<ClassOfInterest> extract(final Module module, final SourceAndLibs sal) throws IOException {
