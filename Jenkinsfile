@@ -10,7 +10,7 @@ properties([
         ])
 ])
 
-def javaVersion = '17'
+def javaVersion = '21'
 
 node('linux-amd64') {
     stage ('Prepare') {
