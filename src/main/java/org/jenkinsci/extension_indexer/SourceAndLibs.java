@@ -151,7 +151,7 @@ public class SourceAndLibs implements Closeable {
 
         System.out.println("Fetching " + module.getSourcesUrl());
 
-        File sourcesJar = File.createTempFile(module.artifactId, "-sources.jar");
+        File sourcesJar = File.createTempFile("extension-indexer-" + module.artifactId, "-sources.jar");
         try (InputStream is = getURLConnection(module.getSourcesUrl()).getInputStream(); OutputStream os = Files.newOutputStream(sourcesJar.toPath())) {
             IOUtils.copy(is, os);
         }
