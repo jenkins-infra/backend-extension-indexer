@@ -39,9 +39,9 @@ abstract class Module implements Comparable<Module> {
 
     public static String getRepositoryOrigin() {
         if (repositoryOrigin.isEmpty()){
-            // Retrieve the env var containing the artifact caching proxy origin
+            // Retrieve the env var containing the artifact caching proxy server URL
             // or use the default https://repo.jenkins-ci.org origin
-            repositoryOrigin = (System.getenv("ARTIFACT_CACHING_PROXY_ORIGIN") != null) ? System.getenv("ARTIFACT_CACHING_PROXY_ORIGIN") : "https://repo.jenkins-ci.org";
+            repositoryOrigin = (System.getenv("ARTIFACT_CACHING_PROXY_SERVERID") != null) ? System.getenv("ARTIFACT_CACHING_PROXY_SERVERID") : "https://repo.jenkins-ci.org";
         }
         return repositoryOrigin;
     }
