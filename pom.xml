@@ -8,7 +8,7 @@
     <relativePath />
   </parent>
   <artifactId>extension-indexer</artifactId>
-  
+
   <version>${revision}${changelist}</version>
   <name>Extension Indexer</name>
   <description>List extension points and their implementations.</description>
@@ -55,7 +55,7 @@
     </plugins>
   </build>
 
-  
+
   <dependencies>
     <dependency>
       <groupId>args4j</groupId>
@@ -92,6 +92,24 @@
       <artifactId>spotbugs-annotations</artifactId>
       <optional>true</optional>
     </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>5.10.2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>5.10.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
 
   <repositories>
