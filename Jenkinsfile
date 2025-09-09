@@ -23,11 +23,13 @@ node('linux-amd64') {
     }
 
     stage ('Generate') {
-        // fetch the Maven settings with artifact caching proxy in a
-        // tmp folder, and set MAVEN_SETTINGS env var to its absolute
-        // location
-        infra.withArtifactCachingProxy {
-            infra.runWithMaven('java -jar target/extension-indexer-*-bin/extension-indexer-*.jar -adoc dist', javaVersion)
+        def tempDir = pwd(tmp: true)
+        // Prefer agent's workpace temp dir to OS temp dir as usually mount a fast and big NVMe on the workspace
+        withEnv(["TMPDIR=${tempDir}"]) {
+            // Fetch the Maven settings with artifact caching proxy in a tmp folder, and set MAVEN_SETTINGS env var to its absolute location.
+            infra.withArtifactCachingProxy {
+                infra.runWithMaven('java -jar target/extension-indexer-*-bin/extension-indexer-*.jar -adoc dist', javaVersion)
+            }
         }
     }
 
