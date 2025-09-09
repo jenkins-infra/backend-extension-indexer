@@ -28,7 +28,7 @@ node('linux-amd64') {
         withEnv(["TMPDIR=${tempDir}"]) {
             // Fetch the Maven settings with artifact caching proxy in a tmp folder, and set MAVEN_SETTINGS env var to its absolute location.
             infra.withArtifactCachingProxy {
-                infra.runWithMaven('java -jar target/extension-indexer-*-bin/extension-indexer-*.jar -adoc dist', javaVersion)
+                infra.runWithMaven("java -Djava.io.tmpdir=${tempDir} -jar target/extension-indexer-*-bin/extension-indexer-*.jar -adoc dist", javaVersion)
             }
         }
     }
