@@ -44,8 +44,6 @@ node('linux-amd64') {
     }
 
     stage ('Publish build report') {
-        if (env.BRANCH_IS_PRIMARY) {
             publishBuildStatusReport()
-        }
     }
 }
