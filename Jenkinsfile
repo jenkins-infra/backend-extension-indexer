@@ -42,4 +42,8 @@ node('linux-amd64') {
             infra.publishReports(['extension-indexer.zip'])
         }
     }
+
+    stage ('Publish build report') {
+        publishBuildStatusReport()
+    }
 }
