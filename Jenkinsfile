@@ -44,6 +44,6 @@ node('linux-amd64') {
     }
 
     stage ('Publish build report') {
-            publishBuildStatusReport()
+        publishBuildStatusReport()
     }
 }
