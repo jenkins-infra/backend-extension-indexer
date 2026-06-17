@@ -42,4 +42,10 @@ node('linux-amd64') {
             infra.publishReports(['extension-indexer.zip'])
         }
     }
+
+    stage ('Publish build report') {
+        if (env.BRANCH_IS_PRIMARY) {
+            publishBuildStatusReport()
+        }
+    }
 }
