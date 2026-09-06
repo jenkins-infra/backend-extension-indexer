@@ -29,7 +29,7 @@
     <mirror>
       <id>repo.j.o-mirror</id>
       <mirrorOf>repo.jenkins-ci.org</mirrorOf>
-      <url>https://repo.jenkine-ci.org/public/</url>
+      <url>https://repo.jenkins-ci.org/public/</url>
     </mirror>
     <mirror>
       <id>m.g.o-public-repo1</id>
